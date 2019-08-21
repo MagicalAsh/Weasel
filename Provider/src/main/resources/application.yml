@@ -1,3 +1,7 @@
+# Banner
+spring:
+    banner.location: classpath:/banner.txt
+
 #Metrics related configurations
 management:
   endpoint:
@@ -8,7 +12,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: *
+        include: "*"
   metrics:
     export:
       prometheus:

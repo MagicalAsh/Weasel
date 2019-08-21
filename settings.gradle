@@ -3,4 +3,9 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-rootProject.name = 'weasel'
+rootProject.name = 'Weasel'
+
+// Include all sub-projects
+include "Provider"
+include "Index"
+include "Search"
