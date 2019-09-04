@@ -25,17 +25,15 @@ repositories {
 
 ext {
     set('springCloudVersion', "Greenwich.SR2")
+    set('elasticsearch.version', "7.3.1")
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.cloud:spring-cloud-starter-sleuth'
-    implementation 'org.springframework.cloud:spring-cloud-starter-zipkin'
-    implementation 'io.micrometer:micrometer-registry-prometheus'
-    
+    implementation project(":Plugins:PluginApi")
+    implementation project(":CommonConfiguration")
+
+    implementation 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.1'
+
     compileOnly 'org.projectlombok:lombok'
     
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

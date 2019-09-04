@@ -1,19 +1,5 @@
-# Banner
-spring:
-    banner.location: classpath:/banner.txt
-
-#Metrics related configurations
-management:
-  endpoint:
-    metrics:
+weasel.provider:
+  refresh:
+    scheduled:
       enabled: true
-    prometheus:
-      enabled: true
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  metrics:
-    export:
-      prometheus:
-        enabled: true
+      cron: 0 * * * *
