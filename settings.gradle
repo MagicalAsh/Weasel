@@ -9,3 +9,7 @@ rootProject.name = 'Weasel'
 include "Provider"
 include "Index"
 include "Search"
+include "Plugins:PluginApi"
+include "Plugins:FileSystemProviderPlugin"
+include "Plugins:RegularExpressionParserPlugin"
+include "CommonConfiguration"

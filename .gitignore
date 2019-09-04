@@ -5,6 +5,9 @@ build/
 !**/src/main/**
 !**/src/test/**
 
+# Ignore the plugin directories that need to be all over the place
+plugins/
+
 ### STS ###
 .apt_generated
 .classpath
