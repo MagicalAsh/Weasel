@@ -12,7 +12,8 @@ pool:
 steps:
 # It'll complain if we don't have a plugins folder during testing.
 - task: CmdLine@2
-  inputs: 'mkdir plugins/ Index/plugins Provider/plugins'
+  inputs:
+    script: 'mkdir plugins/ Index/plugins Provider/plugins'
 - task: Gradle@2
   inputs:
     workingDirectory: ''
