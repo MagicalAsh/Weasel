@@ -10,6 +10,9 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
+# It'll complain if we don't have a plugins folder during testing.
+- task: CmdLine@2
+  inputs: 'mkdir plugins/ Index/plugins Provider/plugins'
 - task: Gradle@2
   inputs:
     workingDirectory: ''
@@ -21,4 +24,3 @@ steps:
     publishJUnitResults: true
     testResultsFiles: '**/TEST-*.xml'
     tasks: 'buildAll'
-
