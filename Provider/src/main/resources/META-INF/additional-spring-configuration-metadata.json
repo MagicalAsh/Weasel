@@ -1,0 +1,24 @@
+{
+  "properties": [
+    {
+      "name": "weasel.provider.refresh.scheduled.cron",
+      "type": "java.lang.String",
+      "description": "Description for weasel.provider.refresh.scheduled.cron."
+    },
+    {
+      "name": "weasel.provider.refresh.scheduled.repositories",
+      "type": "java.lang.String",
+      "description": "Description for weasel.provider.refresh.scheduled.repositories."
+    },
+    {
+      "name": "weasel.provider.refresh.scheduled.enabled",
+      "type": "java.lang.String",
+      "description": "Description for weasel.provider.refresh.scheduled.enabled."
+    },
+    {
+      "name": "weasel.provider.refresh.web.enabled",
+      "type": "java.lang.String",
+      "description": "Description for weasel.provider.refresh.web.enabled."
+    }
+  ]
+}

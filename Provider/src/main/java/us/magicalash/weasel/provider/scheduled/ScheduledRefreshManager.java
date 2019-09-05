@@ -1,19 +1,18 @@
-package us.magicalash.weasel.provider.configuration;
+package us.magicalash.weasel.provider.scheduled;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import us.magicalash.weasel.provider.plugin.PluginLoader;
+import us.magicalash.weasel.provider.configuration.SendingProperties;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
+import us.magicalash.weasel.provider.plugin.ProviderPluginLoader;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,37 +22,28 @@ import java.util.Map;
 public class ScheduledRefreshManager {
     private static final Logger logger = LoggerFactory.getLogger(ScheduledRefreshManager.class);
 
-    /**
-     * Determines whether component is enabled.
-     */
-    @Value("${weasel.provider.refresh.scheduled.enabled}")
-    private boolean enabled;
-
-    /**
-     * A list of repositories that are to be refreshed on a schedule.
-     */
-    @Value("${weasel.provider.refresh.scheduled.repositories}")
-    private List<String> repositories;
-
-    private final PluginLoader loader;
+    private final ProviderPluginLoader loader;
     private final RestTemplate template;
     private final SendingProperties properties;
+    private final SchedulingProperties schedulingProperties;
 
 
-    public ScheduledRefreshManager(PluginLoader loader, RestTemplate template, SendingProperties properties) {
+    public ScheduledRefreshManager(ProviderPluginLoader loader, RestTemplate template, SendingProperties properties,
+                                   SchedulingProperties schedulingProperties) {
         this.loader = loader;
         this.template = template;
         this.properties = properties;
+        this.schedulingProperties = schedulingProperties;
     }
 
-    @Scheduled(cron="${weasel.provider.refresh.scheduled.cron}")
+    @Scheduled(cron="#{schedulingProperties.cron}")
     public void refresh() {
-        if(!enabled)
+        if(!schedulingProperties.isEnabled())
             return;
 
         logger.debug("Beginning scheduled refresh of all repositories.");
 
-        for (String repository : repositories) {
+        for (String repository : schedulingProperties.getRepositories()) {
             for (ProviderPlugin plugin : loader.getLoadedPluginsForRepo(repository)) {
                 JsonElement repo = plugin.refresh(repository);
 

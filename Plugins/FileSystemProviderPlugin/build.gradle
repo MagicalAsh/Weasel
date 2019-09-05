@@ -22,10 +22,13 @@ repositories {
 
 dependencies {
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
-    compile project(':Plugins:PluginApi')
+    compileOnly project(':Plugins:PluginApi')
+
+    compileOnly 'com.google.code.gson:gson:2.8.5'
 
     compileOnly 'org.projectlombok:lombok:1.18.8'
     annotationProcessor 'org.projectlombok:lombok:1.18.8'
 
+    testImplementation project(':Plugins:PluginApi')
     testImplementation "junit:junit:4.12"
 }

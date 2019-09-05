@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
-import us.magicalash.weasel.index.plugin.PluginLoader;
+import us.magicalash.weasel.index.plugin.IndexPluginLoader;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -31,9 +31,9 @@ public class WebIndexController {
     private static final Logger logger = LoggerFactory.getLogger(WebIndexController.class);
 
     private final RestHighLevelClient restClient;
-    private final PluginLoader pluginLoader;
+    private final IndexPluginLoader pluginLoader;
 
-    public WebIndexController(RestHighLevelClient restClient, PluginLoader pluginLoader) {
+    public WebIndexController(RestHighLevelClient restClient, IndexPluginLoader pluginLoader) {
         this.restClient = restClient;
         this.pluginLoader = pluginLoader;
     }
@@ -43,27 +43,25 @@ public class WebIndexController {
         JsonObject response = new JsonObject();
         response.add("processed_by", new JsonArray());
 
-        for (IndexPlugin plugin : pluginLoader.getLoadedPlugins()) {
-            if(plugin.canIndex(body)){
-                try {
-                    JsonObject result = plugin.index(body);
-                    restClient.index(buildQuery(result), RequestOptions.DEFAULT);
+        for (IndexPlugin plugin : pluginLoader.getCapableLoadedPlugins(body)) {
+            try {
+                JsonObject result = plugin.index(body);
+                restClient.index(buildQuery(result), RequestOptions.DEFAULT);
 
-                    response.getAsJsonArray("processed_by")
-                            .add(plugin.getName());
-                } catch (IOException | IllegalArgumentException e) {
-                    response.addProperty("status", "failed");
-                    response.addProperty("reason", e.getMessage());
+                response.getAsJsonArray("processed_by")
+                        .add(plugin.getName());
+            } catch (IOException | IllegalArgumentException e) {
+                response.addProperty("status", "failed");
+                response.addProperty("reason", e.getMessage());
 
-                    logger.error("", e);
+                logger.error("", e);
 
-                    if (e instanceof IOException)
-                        throw HttpServerErrorException.create(HttpStatus.INTERNAL_SERVER_ERROR, "Processing Failed",
-                                new HttpHeaders(), response.toString().getBytes(), Charset.defaultCharset());
-                    else if (e instanceof IllegalArgumentException)
-                        throw HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Malformed Request",
-                                new HttpHeaders(), response.toString().getBytes(), Charset.defaultCharset());
-                }
+                if (e instanceof IOException)
+                    throw HttpServerErrorException.create(HttpStatus.INTERNAL_SERVER_ERROR, "Processing Failed",
+                            new HttpHeaders(), response.toString().getBytes(), Charset.defaultCharset());
+                else if (e instanceof IllegalArgumentException)
+                    throw HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Malformed Request",
+                            new HttpHeaders(), response.toString().getBytes(), Charset.defaultCharset());
             }
         }
 

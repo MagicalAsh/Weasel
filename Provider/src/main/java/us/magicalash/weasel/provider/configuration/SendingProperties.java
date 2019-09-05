@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "weasel.provider.sendto")
 public class SendingProperties {
     private String host = "localhost";
-    private String port = "80";
+    private String port = "9909";
     private String endpoint = "/index/index";
 
     public String getAddress() {
