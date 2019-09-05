@@ -40,7 +40,7 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
     public JsonArray refresh(String name) {
         JsonArray out = new JsonArray();
         File root = new File(name.replace("file://", ""));
-        System.out.println("looking in " + root.toString());
+
         recursiveSearch(out, root);
 
         return out;

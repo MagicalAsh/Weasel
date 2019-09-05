@@ -22,3 +22,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
+
+subprojects {
+    task buildAll(type: GradleBuild) {
+        tasks = [ 'build' ]
+    }
+}
+
+task buildAll {
+    dependsOn gradle.includedBuilds*.task(':buildAll')
+}
