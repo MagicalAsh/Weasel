@@ -12,7 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -26,7 +25,6 @@ import static us.magicalash.weasel.index.plugin.IndexPlugin.DESTINATION;
 import static us.magicalash.weasel.index.plugin.IndexPlugin.SOURCE_ID;
 
 @RestController
-@RequestMapping("/index/index")
 public class WebIndexController {
     private static final Logger logger = LoggerFactory.getLogger(WebIndexController.class);
 
@@ -38,7 +36,7 @@ public class WebIndexController {
         this.pluginLoader = pluginLoader;
     }
 
-    @PostMapping
+    @PostMapping("/index")
     public JsonObject index(@RequestBody JsonObject body) {
         JsonObject response = new JsonObject();
         response.add("processed_by", new JsonArray());
@@ -66,6 +64,35 @@ public class WebIndexController {
         }
 
         response.addProperty("status", "success");
+        return response;
+    }
+
+    @PostMapping("/dry_run")
+    public JsonObject dryRun(@RequestBody JsonObject body) {
+        JsonObject response = new JsonObject();
+        JsonArray pluginResults = new JsonArray();
+
+        for (IndexPlugin plugin : pluginLoader.getCapableLoadedPlugins(body)) {
+            try {
+                JsonObject result = plugin.index(body);
+                JsonObject pluginResult = new JsonObject();
+
+                pluginResult.addProperty("plugin_name", plugin.getName());
+                pluginResult.add("result", result);
+
+                pluginResults.add(pluginResult);
+            } catch (IllegalArgumentException e) {
+                response.addProperty("status", "failed");
+                response.addProperty("reason", e.getMessage());
+
+                logger.error("", e);
+                throw HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Malformed Request",
+                        new HttpHeaders(), response.toString().getBytes(), Charset.defaultCharset());
+            }
+        }
+
+        response.addProperty("status", "success");
+        response.add("values", pluginResults);
         return response;
     }
 

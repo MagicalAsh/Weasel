@@ -37,7 +37,7 @@ public class PluginLoader<T extends WeaselPlugin> {
         try {
             URL[] pluginUrls = new URL[plugins.length];
             for (int i = 0; i < plugins.length; i++) {
-                pluginUrls[i] = plugins[i].toURL();
+                pluginUrls[i] = plugins[i].toURL(); //todo fix deprecation
             }
 
             classLoader = new URLClassLoader(pluginUrls, this.getClass().getClassLoader());
