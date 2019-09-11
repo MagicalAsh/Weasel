@@ -27,8 +27,16 @@ subprojects {
     task buildAll(type: GradleBuild) {
         tasks = [ 'build' ]
     }
+
+    task cleanAll(type: GradleBuild) {
+        tasks = [ 'clean' ]
+    }
 }
 
 task buildAll {
     dependsOn gradle.includedBuilds*.task(':buildAll')
+}
+
+task cleanAll {
+    dependsOn gradle.includedBuilds*.task(':cleanAll')
 }
