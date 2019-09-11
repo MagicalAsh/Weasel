@@ -25,10 +25,14 @@ repositories {
 
 ext {
     set('springCloudVersion', "Greenwich.SR2")
+    set('elasticsearch.version', "7.3.1")
 }
 
 dependencies {
     implementation project(":CommonConfiguration")
+
+    implementation 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.1'
+
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
