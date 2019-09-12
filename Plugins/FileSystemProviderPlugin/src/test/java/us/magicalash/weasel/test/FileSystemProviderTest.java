@@ -1,13 +1,13 @@
 package us.magicalash.weasel.test;
 
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
+import com.google.gson.*;
 import org.junit.Before;
 import org.junit.Test;
 import us.magicalash.weasel.plugin.FileSystemProviderPlugin;
+import us.magicalash.weasel.plugin.GlobMatcher;
 
+import java.util.ArrayList;
 import java.util.Properties;
 
 import static org.junit.Assert.assertFalse;
@@ -37,5 +37,24 @@ public class FileSystemProviderTest {
         JsonArray testing = plugin.refresh("file://" + System.getProperty("user.dir") + "/src/");
         System.out.println(gson.toJson(testing));
         assertTrue(testing.size() > 0);
+    }
+
+    @Test
+    public void testGlobs() {
+        Properties p = new Properties();
+        ArrayList<String> ignored = new ArrayList<>();
+        ignored.add("*.java");
+        p.put(GlobMatcher.IGNORED_FILES, ignored);
+        plugin.load(p);
+
+        JsonArray array = plugin.refresh("./");
+        for (JsonElement j : array) {
+            if (j instanceof JsonObject) {
+                JsonObject file = (JsonObject) j;
+                String location = file.get("content_location").getAsString();
+                assertFalse(location.endsWith(".java"));
+                System.out.println(gson.toJson(j));
+            }
+        }
     }
 }

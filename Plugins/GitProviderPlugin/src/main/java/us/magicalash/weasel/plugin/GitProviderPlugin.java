@@ -35,7 +35,9 @@ public class GitProviderPlugin implements ProviderPlugin {
 
     @Override
     public String[] requestProperties() {
-        return new String[0];
+        return new String[] {
+                GitConstants.TEMP_DIR
+        };
     }
 
     @Override
@@ -50,7 +52,7 @@ public class GitProviderPlugin implements ProviderPlugin {
             canRefresh = true;
         }
 
-        if (isRemoteRepo(name)) {
+        if (!canRefresh && isRemoteRepo(name)) {
             canRefresh = true;
         }
 
@@ -69,8 +71,10 @@ public class GitProviderPlugin implements ProviderPlugin {
             }
         } catch (IOException e) {
             logger.warn("Something went wrong while trying to refresh a git repository.", e);
+            throw new RuntimeException(e);
         } catch (GitAPIException e) {
             logger.warn("Something went wrong while interacting with git.", e);
+            throw new RuntimeException(e);
         }
 
         return files;
@@ -117,7 +121,9 @@ public class GitProviderPlugin implements ProviderPlugin {
     private Repository getRepo(String name){
         if (isRemoteRepo(name)) {
             try {
-                Git git = Git.cloneRepository().setURI(name).call();
+                Git git = Git.cloneRepository()
+                                .setDirectory(new File(properties.getProperty(GitConstants.TEMP_DIR)))
+                                .setURI(name).call();
                 return git.getRepository();
             } catch (GitAPIException e){
                 logger.warn("Cloning Remote repo failed!");

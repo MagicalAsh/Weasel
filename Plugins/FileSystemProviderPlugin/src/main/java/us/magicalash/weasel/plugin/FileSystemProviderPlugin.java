@@ -10,7 +10,12 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static us.magicalash.weasel.plugin.GlobMatcher.IGNORED_FILES;
+
 public class FileSystemProviderPlugin implements ProviderPlugin {
+    private Properties properties;
+    private GlobMatcher matcher;
+
     @Override
     public String getName() {
         return "File System Provider";
@@ -18,12 +23,15 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
 
     @Override
     public String[] requestProperties() {
-        return new String[0];
+        return new String[]{
+                IGNORED_FILES
+        };
     }
 
     @Override
     public void load(Properties properties) {
-
+        this.properties = properties;
+        this.matcher = new GlobMatcher(properties);
     }
 
     @Override
@@ -47,6 +55,11 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
     }
 
     private JsonArray recursiveSearch(JsonArray array, File root){
+        // return early if this is ignored.
+        if (matcher.matchesAny(root.getName())) {
+            return array;
+        }
+
         if (root.isDirectory()) {
             for (File file : Objects.requireNonNull(root.listFiles())) {
                 recursiveSearch(array, file);
@@ -60,6 +73,7 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
     private JsonObject parseFile(File file) {
         JsonObject fileData = new JsonObject();
         JsonArray lines = new JsonArray();
+
         try (Scanner fileReader = new Scanner(file)) {
             while (fileReader.hasNext()) {
                 lines.add(fileReader.nextLine());

@@ -3,6 +3,7 @@ package us.magicalash.weasel.provider.web;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,7 @@ public class WebRefreshController {
     /**
      * Web Refreshing enabled
      */
+    @Setter
     @Value("${weasel.provider.refresh.web.enabled}")
     private boolean enabled;
 

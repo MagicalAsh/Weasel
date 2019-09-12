@@ -30,5 +30,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.8'
 
     testImplementation project(':Plugins:PluginApi')
+    testImplementation "ch.qos.logback:logback-classic:1.1.7"
     testImplementation "junit:junit:4.12"
 }

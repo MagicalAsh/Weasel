@@ -3,22 +3,22 @@
     {
       "name": "weasel.provider.refresh.scheduled.cron",
       "type": "java.lang.String",
-      "description": "Description for weasel.provider.refresh.scheduled.cron."
+      "description": "The Cron time description for when to refresh."
     },
     {
       "name": "weasel.provider.refresh.scheduled.repositories",
       "type": "java.lang.String",
-      "description": "Description for weasel.provider.refresh.scheduled.repositories."
+      "description": "Repositories to refresh on a scheduled basis."
     },
     {
       "name": "weasel.provider.refresh.scheduled.enabled",
       "type": "java.lang.String",
-      "description": "Description for weasel.provider.refresh.scheduled.enabled."
+      "description": "Whether to enable scheduled refresh or not."
     },
     {
       "name": "weasel.provider.refresh.web.enabled",
       "type": "java.lang.String",
-      "description": "Description for weasel.provider.refresh.web.enabled."
+      "description": "Whether to enable web-initiated refresh or not."
     }
   ]
 }

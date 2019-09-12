@@ -8,5 +8,14 @@ weasel:
         cron: 0 * * * *
         repositories:
           - file:///home/wes/Weasel/Provider/src/main/java
+    plugin:
+      git:
+        temp_dir: /tmp
+      files:
+        ignored:
+          - "build/*"
+          - "*.class"
+          - "*.jar"
+
 server:
   port: 9990
