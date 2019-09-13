@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import us.magicalash.weasel.plugin.GitConstants;
 import us.magicalash.weasel.plugin.GitProviderPlugin;
@@ -70,6 +71,7 @@ public class GitProviderTest {
         System.out.println(gson.toJson(arr));
     }
 
+    @Ignore("Requires ssh key set up, which may not be set up.")
     @Test
     public void testLoadSshRepo() {
         JsonArray arr = this.provider.refresh("git@github.com:MagicalAsh/Weasel.git");
