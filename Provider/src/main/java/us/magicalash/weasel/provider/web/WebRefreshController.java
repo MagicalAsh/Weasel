@@ -5,15 +5,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import us.magicalash.weasel.provider.configuration.SendingProperties;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 import us.magicalash.weasel.provider.plugin.ProviderPluginLoader;
 
-import java.nio.charset.Charset;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 @RestController
@@ -37,13 +39,13 @@ public class WebRefreshController {
     }
 
     @GetMapping("/refresh/{repoName}")
-    public JsonObject refresh(@PathVariable String repoName) {
+    public JsonObject refresh(@PathVariable String repoName, HttpServletResponse servletResponse) {
         JsonObject response = new JsonObject();
         if(!enabled) {
             response.addProperty("status", "failed");
             response.addProperty("reason", "Web refresh disabled.");
-            throw HttpClientErrorException.create(HttpStatus.FORBIDDEN, "Web Refresh Disabled",
-                    new HttpHeaders(), response.toString().getBytes(), Charset.defaultCharset());
+            servletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return response;
         }
 
         List<ProviderPlugin> plugins = pluginLoader.getLoadedPluginsForRepo(repoName);
@@ -69,10 +71,10 @@ public class WebRefreshController {
     }
 
     @PostMapping("/refresh")
-    public JsonArray refresh(@RequestBody JsonArray body) {
+    public JsonArray refresh(@RequestBody JsonArray body, HttpServletResponse servletResponse) {
         JsonArray response = new JsonArray();
         for (JsonElement element : body) {
-            response.add(refresh(element.getAsString()));
+            response.add(refresh(element.getAsString(), servletResponse));
         }
 
         return response;
