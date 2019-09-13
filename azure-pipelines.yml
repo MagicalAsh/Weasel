@@ -10,10 +10,20 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-# It'll complain if we don't have a plugins folder during testing.
+- task: Gradle@2
+  inputs:
+    workingDirectory: ''
+    gradleWrapperFile: 'gradlew'
+    gradleOptions: '-Xmx3072m'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.8'
+    jdkArchitectureOption: 'x64'
+    publishJUnitResults: true
+    testResultsFiles: '**/TEST-*.xml'
+    tasks: ':plugins:buildAll'
 - task: CmdLine@2
   inputs:
-    script: 'mkdir plugins/ Index/plugins Provider/plugins'
+    script: './installPlugins.sh'
 - task: Gradle@2
   inputs:
     workingDirectory: ''

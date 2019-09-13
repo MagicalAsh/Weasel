@@ -33,3 +33,11 @@ dependencies {
     testImplementation "ch.qos.logback:logback-classic:1.1.7"
     testImplementation "junit:junit:4.12"
 }
+
+// copy all of the dependencies into libs as well
+task copyToLib(type: Copy) {
+    into "$buildDir/libs"
+    from (configurations.runtimeClasspath - project(":CommonConfiguration").configurations.runtimeClasspath)
+}
+
+build.dependsOn(copyToLib)
