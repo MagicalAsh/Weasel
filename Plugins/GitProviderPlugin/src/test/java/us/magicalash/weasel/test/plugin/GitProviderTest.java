@@ -72,7 +72,7 @@ public class GitProviderTest {
 
     @Test
     public void testLoadSshRepo() {
-        JsonArray arr = this.provider.refresh("git@github.com:MagicalAsh/discrete-biostatistics-project.git");
+        JsonArray arr = this.provider.refresh("git@github.com:MagicalAsh/Weasel.git");
 
         assertTrue(arr.size() > 0);
 
