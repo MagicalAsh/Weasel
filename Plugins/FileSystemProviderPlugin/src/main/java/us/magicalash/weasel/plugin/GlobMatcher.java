@@ -6,7 +6,7 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 public class GlobMatcher {
-    public static final String IGNORED_FILES = "weasel.provider.plugin.files.ignored";
+    public static final String IGNORED_FILES = "weasel.provider.plugin.files.ignored[*]";
 
     private List<String> globs;
     private List<Pattern> globPatterns;

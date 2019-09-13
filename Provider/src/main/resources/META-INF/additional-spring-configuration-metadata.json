@@ -7,18 +7,23 @@
     },
     {
       "name": "weasel.provider.refresh.scheduled.repositories",
-      "type": "java.lang.String",
+      "type": "java.util.List<java.lang.String>",
       "description": "Repositories to refresh on a scheduled basis."
     },
     {
       "name": "weasel.provider.refresh.scheduled.enabled",
-      "type": "java.lang.String",
+      "type": "java.lang.Boolean",
       "description": "Whether to enable scheduled refresh or not."
     },
     {
       "name": "weasel.provider.refresh.web.enabled",
-      "type": "java.lang.String",
+      "type": "java.lang.Boolean",
       "description": "Whether to enable web-initiated refresh or not."
+    },
+    {
+      "name": "weasel.provider.plugin.files.ignored",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Description for weasel.provider.plugin.files.ignored."
     }
   ]
 }

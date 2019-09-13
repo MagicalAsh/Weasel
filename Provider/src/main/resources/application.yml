@@ -1,5 +1,7 @@
 weasel:
   provider:
+    pull:
+      enabled: true
     refresh:
       web:
         enabled: true
@@ -16,6 +18,8 @@ weasel:
           - "build/*"
           - "*.class"
           - "*.jar"
+
+
 
 server:
   port: 9990

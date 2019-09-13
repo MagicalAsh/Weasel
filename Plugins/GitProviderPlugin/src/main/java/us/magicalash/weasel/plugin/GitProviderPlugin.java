@@ -19,6 +19,9 @@ import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -120,12 +123,17 @@ public class GitProviderPlugin implements ProviderPlugin {
 
     private Repository getRepo(String name){
         if (isRemoteRepo(name)) {
+            Path workingDir = Paths.get(properties.getProperty(GitConstants.TEMP_DIR));
+
             try {
+                File tempFile = Files.createTempDirectory(workingDir, "gitTemp").toFile();
+
                 Git git = Git.cloneRepository()
-                                .setDirectory(new File(properties.getProperty(GitConstants.TEMP_DIR)))
-                                .setURI(name).call();
+                                .setDirectory(tempFile)
+                                .setURI(name)
+                                .call();
                 return git.getRepository();
-            } catch (GitAPIException e){
+            } catch (GitAPIException|IOException e){
                 logger.warn("Cloning Remote repo failed!");
                 throw new RuntimeException("Failed to get remote repository.", e);
             }

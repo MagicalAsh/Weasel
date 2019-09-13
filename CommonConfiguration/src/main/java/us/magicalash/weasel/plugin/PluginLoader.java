@@ -57,7 +57,14 @@ public class PluginLoader<T extends WeaselPlugin> {
             Properties properties = new Properties();
             for (String property : plugin.requestProperties()) {
                 // copy properties from spring into a properties object, because Spring can't.
-                properties.put(property, environment.getProperty(property));
+                Object value = null;
+                if (property.endsWith("[*]")) {
+                    value = toList(property.replace("[*]", ""));
+                } else {
+                    value = environment.getProperty(property);
+                }
+
+                properties.put(property, value == null ? "" : value);
             }
             plugin.load(properties);
 
@@ -65,6 +72,25 @@ public class PluginLoader<T extends WeaselPlugin> {
         }
 
         logger.info("Loaded {} plugins.", loadedPlugins.size());
+    }
+
+    private List<String> toList(String property) {
+        List<String> list = new ArrayList<>();
+        int i = 0;
+        boolean shouldContinue = true;
+
+        while (shouldContinue) {
+            String propertyName = property + "[" + i + "]";
+            String value = environment.getProperty(propertyName);
+            if (value != null) {
+                list.add(value);
+                i++;
+            } else {
+                shouldContinue = false;
+            }
+        }
+
+        return list;
     }
 
     public List<T> getLoadedPlugins() {
