@@ -1,5 +1,7 @@
 # Weasel: Finding Code
 
+[![Build Status](https://dev.azure.com/wsrogers3/wsrogers3/_apis/build/status/MagicalAsh.Weasel?branchName=master)](https://dev.azure.com/wsrogers3/wsrogers3/_build/latest?definitionId=1&branchName=master)
+
 Weasel is a tool to search the semantics of code. 
 
 ## Architecture
