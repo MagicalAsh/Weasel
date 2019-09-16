@@ -8,6 +8,9 @@ import us.magicalash.weasel.plugin.PluginLoader;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Plugin loader for ProviderPlugin instances.
+ */
 @Component
 public class ProviderPluginLoader extends PluginLoader<ProviderPlugin> {
     @Autowired

@@ -6,6 +6,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * Scheduling properties, to be used to determine when to refresh code based on a schedule.
+ */
 @Data
 @Component
 @ConfigurationProperties("weasel.provider.refresh.scheduled")

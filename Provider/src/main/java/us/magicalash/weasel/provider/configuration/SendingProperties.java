@@ -4,6 +4,9 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+/**
+ * Properties class for where to send code to.
+ */
 @Data
 @Component
 @ConfigurationProperties(prefix = "weasel.provider.sendto")
