@@ -113,6 +113,8 @@ public class GitProviderPlugin implements ProviderPlugin {
                 fileData.addProperty("accessed", getTimestamp());
                 fileData.addProperty("obtained_by", getName());
                 fileData.addProperty("branch_name", branchName);
+                fileData.addProperty("line_count", lines.size());
+                fileData.addProperty("commit_id", walk.getObjectId(0).name());
                 // todo add information about the file, like when commited etc
                 out.add(fileData);
             }

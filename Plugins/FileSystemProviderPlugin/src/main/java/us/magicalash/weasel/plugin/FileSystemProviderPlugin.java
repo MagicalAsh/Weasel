@@ -87,6 +87,7 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
         fileData.addProperty("content_location", file.getAbsolutePath());
         fileData.addProperty("accessed", getTimestamp());
         fileData.addProperty("obtained_by", getName());
+        fileData.addProperty("line_count", lines.size());
 
         return fileData;
     }
