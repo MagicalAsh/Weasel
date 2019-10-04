@@ -10,9 +10,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static us.magicalash.weasel.plugin.GlobMatcher.IGNORED_FILES;
+import static us.magicalash.weasel.plugin.FileSystemConstants.IGNORED_FILES;
 
 public class FileSystemProviderPlugin implements ProviderPlugin {
+
     private Properties properties;
     private GlobMatcher matcher;
 
@@ -29,9 +30,10 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void load(Properties properties) {
         this.properties = properties;
-        this.matcher = new GlobMatcher(properties);
+        this.matcher = new GlobMatcher(null, (List<String>) properties.get(IGNORED_FILES));
     }
 
     @Override
@@ -56,7 +58,7 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
 
     private JsonArray recursiveSearch(JsonArray array, File root){
         // return early if this is ignored.
-        if (matcher.matchesAny(root.getName())) {
+        if (matcher.isBlacklisted(root.getName())) {
             return array;
         }
 

@@ -2,30 +2,49 @@ package us.magicalash.weasel.plugin;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.regex.Pattern;
 
 public class GlobMatcher {
-    public static final String IGNORED_FILES = "weasel.provider.plugin.files.ignored[*]";
+    private List<Pattern> whiteListPatterns;
+    private List<Pattern> blackListPatterns;
 
-    private List<String> globs;
-    private List<Pattern> globPatterns;
-
-    public GlobMatcher(Properties properties) {
-        globs = (List<String>) properties.get(IGNORED_FILES);
-        if (globs == null) {
-            globs = new ArrayList<>();
+    @SuppressWarnings("unchecked")
+    public GlobMatcher(List<String> whiteListGlobs, List<String> blackListGlobs) {
+        if (whiteListGlobs == null) {
+            whiteListGlobs = new ArrayList<>();
         }
-        globPatterns = new ArrayList<>();
-        for (String glob : globs) {
+
+        if (blackListGlobs == null) {
+            blackListGlobs = new ArrayList<>();
+        }
+
+        whiteListPatterns = new ArrayList<>();
+        for (String glob : whiteListGlobs) {
             String regex = globToRegex(glob);
             Pattern globPattern = Pattern.compile(regex);
-            this.globPatterns.add(globPattern);
+            this.whiteListPatterns.add(globPattern);
+        }
+
+        blackListPatterns = new ArrayList<>();
+        for (String glob : blackListGlobs) {
+            String regex = globToRegex(glob);
+            Pattern globPattern = Pattern.compile(regex);
+            this.blackListPatterns.add(globPattern);
         }
     }
 
-    public boolean matchesAny(String name) {
-        for (Pattern p : globPatterns) {
+    public boolean isWhitelisted(String name) {
+        for (Pattern p : whiteListPatterns) {
+            if (p.matcher(name).find()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isBlacklisted(String name) {
+        for (Pattern p : blackListPatterns) {
             if (p.matcher(name).find()) {
                 return true;
             }

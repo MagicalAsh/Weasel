@@ -29,6 +29,7 @@ import java.util.*;
 public class GitProviderPlugin implements ProviderPlugin {
     private static final Logger logger = LoggerFactory.getLogger(GitProviderPlugin.class);
     private Properties properties;
+    private GlobMatcher globMatcher;
 
 
     @Override
@@ -39,12 +40,17 @@ public class GitProviderPlugin implements ProviderPlugin {
     @Override
     public String[] requestProperties() {
         return new String[] {
-                GitConstants.TEMP_DIR
+                GitConstants.TEMP_DIR,
+                GitConstants.BRANCH_WHITELIST,
+                GitConstants.BRANCH_BLACKLIST
         };
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void load(Properties properties) {
+        this.globMatcher = new GlobMatcher((List<String>) properties.get(GitConstants.BRANCH_WHITELIST),
+                                           (List<String>) properties.get(GitConstants.BRANCH_BLACKLIST));
         this.properties = properties;
     }
 
@@ -84,6 +90,12 @@ public class GitProviderPlugin implements ProviderPlugin {
     }
 
     private JsonArray traverseBranch(String branchName, Repository repository) throws IOException, GitAPIException {
+        if (globMatcher.isBlacklisted(branchName)) { // ignore blacklist branches
+            if (!globMatcher.isWhitelisted(branchName)) { // don't ignore whitelisted ones though
+                return new JsonArray();
+            }
+        }
+
         JsonArray out = new JsonArray();
         Git git = new Git(repository);
         // checkout the branch so we can traverse it

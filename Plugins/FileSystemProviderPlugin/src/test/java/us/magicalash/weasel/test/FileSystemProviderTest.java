@@ -4,8 +4,8 @@ package us.magicalash.weasel.test;
 import com.google.gson.*;
 import org.junit.Before;
 import org.junit.Test;
+import us.magicalash.weasel.plugin.FileSystemConstants;
 import us.magicalash.weasel.plugin.FileSystemProviderPlugin;
-import us.magicalash.weasel.plugin.GlobMatcher;
 
 import java.util.ArrayList;
 import java.util.Properties;
@@ -44,7 +44,7 @@ public class FileSystemProviderTest {
         Properties p = new Properties();
         ArrayList<String> ignored = new ArrayList<>();
         ignored.add("*.java");
-        p.put(GlobMatcher.IGNORED_FILES, ignored);
+        p.put(FileSystemConstants.IGNORED_FILES, ignored);
         plugin.load(p);
 
         JsonArray array = plugin.refresh("./");
