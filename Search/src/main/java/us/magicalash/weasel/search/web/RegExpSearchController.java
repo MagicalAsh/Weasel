@@ -5,6 +5,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RegexpFlag;
 import org.elasticsearch.index.query.RegexpQueryBuilder;
@@ -43,7 +44,18 @@ public class RegExpSearchController {
             JsonArray array = new JsonArray();
             for(SearchHit hit : search.getHits()) {
                 String json = hit.getSourceAsString();
-                JsonElement source = new JsonParser().parse(json).getAsJsonObject();
+                JsonObject source = new JsonParser().parse(json).getAsJsonObject();
+                JsonArray hits = new JsonArray();
+                for(Text textMatch : hit.getHighlightFields().get("file_contents.keyword").getFragments()) {
+                    int i = 1;
+                    for (JsonElement line : source.getAsJsonArray("file_contents")) {
+                        if (line.getAsString().contains(textMatch.toString())) {
+                            hits.add(i);
+                        }
+                        i++;
+                    }
+                }
+                source.add("line_hits", hits);
                 array.add(source);
                 hitCount++;
             }
