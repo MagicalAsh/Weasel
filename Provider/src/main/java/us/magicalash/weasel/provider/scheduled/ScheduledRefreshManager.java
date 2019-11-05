@@ -44,7 +44,7 @@ public class ScheduledRefreshManager {
         logger.debug("Beginning scheduled refresh of all repositories.");
 
         for (String repository : schedulingProperties.getRepositories()) {
-            for (ProviderPlugin plugin : loader.getLoadedPluginsForRepo(repository)) {
+            for (ProviderPlugin plugin : loader.getApplicablePlugins(repository)) {
                 JsonElement repo = plugin.refresh(repository);
 
                 Map<String, String> queryParams = new LinkedHashMap<>();

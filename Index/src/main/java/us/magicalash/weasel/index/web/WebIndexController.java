@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.IndexPluginLoader;
+import us.magicalash.weasel.plugin.PluginTask;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -39,31 +39,30 @@ public class WebIndexController {
     @PostMapping("/index")
     public JsonObject index(@RequestBody JsonObject body) {
         JsonObject response = new JsonObject();
-        response.add("processed_by", new JsonArray());
+        JsonArray scheduled = new JsonArray();
 
-        for (IndexPlugin plugin : pluginLoader.getCapableLoadedPlugins(body)) {
-            try {
-                JsonObject result = plugin.index(body);
-                restClient.index(buildQuery(result), RequestOptions.DEFAULT);
+        for (IndexPlugin plugin : pluginLoader.getApplicablePlugins(body)) {
+            scheduled.add(plugin.getName());
+            PluginTask<JsonObject> task = new PluginTask<>();
+            task.setPluginName(plugin.getName());
+            task.setTask(() -> {
+                try {
+                    JsonObject result = plugin.index(body);
+                    restClient.index(buildQuery(result), RequestOptions.DEFAULT);
 
-                response.getAsJsonArray("processed_by")
-                        .add(plugin.getName());
-            } catch (IOException | IllegalArgumentException e) {
-                response.addProperty("status", "failed");
-                response.addProperty("reason", e.getMessage());
+                    return result;
+                } catch (IOException | IllegalArgumentException e) {
+                    logger.error("Errored while processing index request.", e);
+                }
 
-                logger.error("", e);
+                return null;
+            });
 
-                if (e instanceof IOException)
-                    throw HttpServerErrorException.create(HttpStatus.INTERNAL_SERVER_ERROR, "Processing Failed",
-                            new HttpHeaders(), response.toString().getBytes(), Charset.defaultCharset());
-                else if (e instanceof IllegalArgumentException)
-                    throw HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Malformed Request",
-                            new HttpHeaders(), response.toString().getBytes(), Charset.defaultCharset());
-            }
+
         }
 
         response.addProperty("status", "success");
+        response.add("scheduled_for", scheduled);
         return response;
     }
 
@@ -72,7 +71,7 @@ public class WebIndexController {
         JsonObject response = new JsonObject();
         JsonArray pluginResults = new JsonArray();
 
-        for (IndexPlugin plugin : pluginLoader.getCapableLoadedPlugins(body)) {
+        for (IndexPlugin plugin : pluginLoader.getApplicablePlugins(body)) {
             try {
                 JsonObject result = plugin.index(body);
                 JsonObject pluginResult = new JsonObject();

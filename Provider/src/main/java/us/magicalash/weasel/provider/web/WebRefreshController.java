@@ -11,6 +11,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import us.magicalash.weasel.plugin.PluginTask;
+import us.magicalash.weasel.plugin.PluginTaskService;
 import us.magicalash.weasel.provider.configuration.SendingProperties;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 import us.magicalash.weasel.provider.plugin.ProviderPluginLoader;
@@ -31,11 +33,14 @@ public class WebRefreshController {
     private final ProviderPluginLoader pluginLoader;
     private final RestTemplate template;
     private final SendingProperties sendingProperties;
+    private final PluginTaskService taskService;
 
-    public WebRefreshController(ProviderPluginLoader pluginLoader, RestTemplate template, SendingProperties sendingProperties) {
+    public WebRefreshController(ProviderPluginLoader pluginLoader, RestTemplate template,
+                                SendingProperties sendingProperties, PluginTaskService taskService) {
         this.pluginLoader = pluginLoader;
         this.template = template;
         this.sendingProperties = sendingProperties;
+        this.taskService = taskService;
     }
 
     @GetMapping("/refresh/{repoName}")
@@ -48,25 +53,33 @@ public class WebRefreshController {
             return response;
         }
 
-        List<ProviderPlugin> plugins = pluginLoader.getLoadedPluginsForRepo(repoName);
+        List<ProviderPlugin> plugins = pluginLoader.getApplicablePlugins(repoName);
 
         JsonArray processed = new JsonArray();
 
         for (ProviderPlugin plugin : plugins) {
-            JsonElement output = plugin.refresh(repoName);
-            processed.add(plugin.getName());
+            PluginTask<JsonElement> task = new PluginTask<>();
+            task.setPluginName(plugin.getName());
+            task.setTask(() -> {
+                JsonElement output = plugin.refresh(repoName);
 
-            if(output.isJsonArray()) {
-                for(JsonElement e : output.getAsJsonArray()) {
-                    send(e.toString());
+                if (output.isJsonArray()) {
+                    for (JsonElement e : output.getAsJsonArray()) {
+                        send(e.toString());
+                    }
+                } else {
+                    send(output.toString());
                 }
-            } else {
-                send(output.toString());
-            }
+
+                return output;
+            });
+
+            processed.add(plugin.getName());
+            this.taskService.submit(task);
         }
 
         response.addProperty("status", "success");
-        response.add("processed_by", processed);
+        response.add("scheduled_for", processed);
         return response;
     }
 

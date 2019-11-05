@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.client.RestTemplate;
+import us.magicalash.weasel.plugin.PluginTaskService;
 
 /**
  * Common Configuration for all Weasel services.
@@ -25,6 +26,11 @@ public class ServiceConfiguration {
     @ConditionalOnMissingBean
     public RestTemplate template() {
         return new RestTemplate();
+    }
+
+    @Bean
+    public PluginTaskService taskService() {
+        return new PluginTaskService();
     }
 
 

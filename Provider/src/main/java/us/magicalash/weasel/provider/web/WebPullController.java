@@ -38,7 +38,7 @@ public class WebPullController {
             return response;
         }
 
-        List<ProviderPlugin> plugins = pluginLoader.getLoadedPluginsForRepo(repoName);
+        List<ProviderPlugin> plugins = pluginLoader.getApplicablePlugins(repoName);
 
         JsonArray pluginResponses = new JsonArray();
         for (ProviderPlugin plugin : plugins) {

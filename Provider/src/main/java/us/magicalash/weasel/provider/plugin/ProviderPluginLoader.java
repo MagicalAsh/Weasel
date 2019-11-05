@@ -5,6 +5,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import us.magicalash.weasel.plugin.PluginLoader;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,7 +19,13 @@ public class ProviderPluginLoader extends PluginLoader<ProviderPlugin> {
         super(ProviderPlugin.class, environment);
     }
 
-    public List<ProviderPlugin> getLoadedPluginsForRepo(String repoName) {
-        return this.getLoadedPlugins().stream().filter(p -> p.canRefresh(repoName)).collect(Collectors.toList());
+    @Override
+    public List<ProviderPlugin> getApplicablePlugins(Object testing) {
+        if (testing instanceof String) {
+            String repoName = (String) testing;
+            return this.getLoadedPlugins().stream().filter(p -> p.canRefresh(repoName)).collect(Collectors.toList());
+        }
+
+        return Collections.emptyList();
     }
 }

@@ -21,7 +21,7 @@ import java.util.*;
  *
  * @param <T> The type of plugin to load.
  */
-public class PluginLoader<T extends WeaselPlugin> {
+public abstract class PluginLoader<T extends WeaselPlugin> {
     private static final Logger logger = LoggerFactory.getLogger(PluginLoader.class);
     private static final String PLUGIN_FOLDER_PROPERTY = "weasel.provider.plugin.location";
     private static final String DEFAULT_PLUGIN_FOLDER = "plugins/";
@@ -127,4 +127,6 @@ public class PluginLoader<T extends WeaselPlugin> {
     public List<T> getLoadedPlugins() {
         return Collections.unmodifiableList(this.loadedPlugins);
     }
+
+    public abstract List<T> getApplicablePlugins(Object obj);
 }

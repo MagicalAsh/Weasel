@@ -6,6 +6,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import us.magicalash.weasel.plugin.PluginLoader;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,7 +19,12 @@ public class IndexPluginLoader extends PluginLoader<IndexPlugin> {
         super(IndexPlugin.class, environment);
     }
 
-    public List<IndexPlugin> getCapableLoadedPlugins(JsonObject indexable) {
-        return this.getLoadedPlugins().stream().filter(p -> p.canIndex(indexable)).collect(Collectors.toList());
+    public List<IndexPlugin> getApplicablePlugins(Object test) {
+        if (test instanceof JsonObject) {
+            JsonObject indexable = (JsonObject) test;
+            return this.getLoadedPlugins().stream().filter(p -> p.canIndex(indexable)).collect(Collectors.toList());
+        }
+
+        return Collections.emptyList();
     }
 }

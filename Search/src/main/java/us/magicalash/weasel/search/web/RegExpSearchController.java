@@ -10,6 +10,7 @@ import org.elasticsearch.index.query.RegexpFlag;
 import org.elasticsearch.index.query.RegexpQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,7 +37,6 @@ public class RegExpSearchController {
         String regex = body.get("regex").getAsString();
         response.addProperty("regex", regex);
         SearchRequest request = searchRequest(regex);
-
         try {
             int hitCount = 0;
             SearchResponse search = client.search(request, RequestOptions.DEFAULT);
@@ -62,7 +62,14 @@ public class RegExpSearchController {
         // .keyword because we need the whole line, not each word
         RegexpQueryBuilder builder = QueryBuilders.regexpQuery("file_contents.keyword", regex);
         builder.flags(RegexpFlag.NONE);
-        return new SearchRequest().indices("raw_file_index").source(new SearchSourceBuilder().query(builder).size(50));
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.query(builder)
+                     .size(10)
+                     .highlighter(
+                             new HighlightBuilder().field("file_contents.keyword")
+                     );
+        return new SearchRequest().indices("raw_file_index")
+                                  .source(sourceBuilder);
     }
 
 }

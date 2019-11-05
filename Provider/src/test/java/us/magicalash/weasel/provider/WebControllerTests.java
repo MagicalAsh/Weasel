@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.web.client.RestTemplate;
+import us.magicalash.weasel.plugin.PluginTaskService;
 import us.magicalash.weasel.provider.configuration.SendingProperties;
 import us.magicalash.weasel.provider.plugin.ProviderPluginLoader;
 import us.magicalash.weasel.provider.web.WebRefreshController;
@@ -24,8 +25,9 @@ public class WebControllerTests {
     public void before() {
         ProviderPluginLoader providerPluginLoader = mock(ProviderPluginLoader.class);
         RestTemplate template = mock(RestTemplate.class);
+        PluginTaskService taskService = mock(PluginTaskService.class);
         SendingProperties properties = new SendingProperties();
-        controller = new WebRefreshController(providerPluginLoader, template, properties);
+        controller = new WebRefreshController(providerPluginLoader, template, properties, taskService);
         controller.setEnabled(true);
 
         // we don't want this returning null, so give it a mock
@@ -51,7 +53,6 @@ public class WebControllerTests {
     public void testWebRefreshReturns() {
         HttpServletResponse response = mock(HttpServletResponse.class);
         JsonObject object = controller.refresh("foobar", response);
-        assertEquals(new JsonArray(), object.get("processed_by"));
-        assertEquals("success", object.get("status").getAsString());
+        assertEquals(new JsonArray(), object.get("scheduled_for"));
     }
 }
