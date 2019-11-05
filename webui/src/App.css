@@ -107,3 +107,7 @@
   margin-right: 0.5em;
   color: #888;
 }
+
+.highlight {
+  background: lightyellow;
+}

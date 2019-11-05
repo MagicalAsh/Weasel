@@ -28,7 +28,7 @@ class ResultView extends Component {
         return (
             <div>
                 {this.state.results.map(i => (
-                    <Result repoName={i.content_location} sourceText={i.file_contents}/>
+                    <Result repoName={i.content_location} sourceText={i.file_contents} lineHits={i.line_hits}/>
                 ))}
             </div>
         );
@@ -92,8 +92,9 @@ const Result = (
                 <hr />
                 <div className="result-body">
                     <pre className="result-text">
-                        {props.sourceText.map(val => <span>{val}</span>)}
-                    </pre>
+                        {props.sourceText.map((val, ind) => props.lineHits.includes(ind + 1)? <span class="highlight">{val}</span> : <span>{val}</span>)}
+
+		    </pre>
                 </div>
             </div>
         );

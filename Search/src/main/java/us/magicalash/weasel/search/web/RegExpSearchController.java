@@ -78,7 +78,7 @@ public class RegExpSearchController {
         sourceBuilder.query(builder)
                      .size(10)
                      .highlighter(
-                             new HighlightBuilder().field("file_contents.keyword")
+                             new HighlightBuilder().field("file_contents.keyword").preTags("").postTags("")
                      );
         return new SearchRequest().indices("raw_file_index")
                                   .source(sourceBuilder);
