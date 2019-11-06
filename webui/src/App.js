@@ -92,9 +92,11 @@ const Result = (
                 <hr />
                 <div className="result-body">
                     <pre className="result-text">
-                        {props.sourceText.map((val, ind) => props.lineHits.includes(ind + 1)? <span class="highlight">{val}</span> : <span>{val}</span>)}
-
-		    </pre>
+                        {
+                            props.sourceText.map((val, ind) =>
+                                props.lineHits.includes(ind + 1)? <span className="highlight">{val}</span> : <span>{val}</span>)
+                        }
+                    </pre>
                 </div>
             </div>
         );
