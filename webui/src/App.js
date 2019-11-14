@@ -97,7 +97,7 @@ const Result = (
                             {
                                 hitContext.lines.map((val, ind) =>
                                      (
-                                         (ind === (hitContext.matching_line - hitContext.line_start - 1))
+                                         hitContext.matching_lines.includes(ind + hitContext.line_start + 1)
                                                 ? <span key={ind} className="highlight">{val}</span>
                                                 : <span key={ind}>{val}</span>
                                      )
