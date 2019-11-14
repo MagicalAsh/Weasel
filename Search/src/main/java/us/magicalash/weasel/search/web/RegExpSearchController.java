@@ -12,6 +12,7 @@ import org.elasticsearch.index.query.RegexpQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,14 +21,14 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/regex")
 public class RegExpSearchController {
-    private final Environment environment;
+
+    @Value("${weasel.search.default_context:5}")
+    private int defaultContext;
+
     private final RestHighLevelClient client;
-    private final Gson gson;
 
     public RegExpSearchController(RestHighLevelClient client, Environment env, Gson gson){
         this.client = client;
-        this.environment = env;
-        this.gson = gson;
     }
 
     @CrossOrigin
@@ -36,6 +37,11 @@ public class RegExpSearchController {
         JsonObject response = new JsonObject();
 
         String regex = body.get("regex").getAsString();
+        int context = defaultContext;
+        if (body.get("match_context") != null) {
+            context = body.get("match_context").getAsInt();
+        }
+
         response.addProperty("regex", regex);
         SearchRequest request = searchRequest(regex);
         try {
@@ -55,7 +61,33 @@ public class RegExpSearchController {
                         i++;
                     }
                 }
-                source.add("line_hits", hits);
+
+                // now that we have where the hits are for this particular match, create an object for the matching file
+                // todo: merge matches where the contexts overlap
+                JsonArray contents = source.remove("file_contents").getAsJsonArray();
+                JsonArray lineHits = new JsonArray();
+                for (JsonElement lineHit : hits) {
+                    JsonObject hitContext = new JsonObject();
+                    JsonArray lines = new JsonArray();
+
+                    // - 1 to offset the matching line
+                    int start = Math.max(lineHit.getAsInt() - context - 1, 0);
+                    int end = Math.min(lineHit.getAsInt() + context - 1, contents.size() - 1);
+
+                    for (int i = start; i <= end; i++) {
+                        lines.add(contents.get(i));
+                    }
+
+                    hitContext.add("lines", lines);
+                    hitContext.addProperty("matching_line", lineHit.getAsInt());
+                    hitContext.addProperty("line_start", start);
+                    hitContext.addProperty("line_end", end);
+
+                    lineHits.add(hitContext);
+                }
+
+                source.add("hits", lineHits);
+
                 array.add(source);
                 hitCount++;
             }

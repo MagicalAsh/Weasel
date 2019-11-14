@@ -28,7 +28,7 @@ class ResultView extends Component {
         return (
             <div>
                 {this.state.results.map(i => (
-                    <Result repoName={i.content_location} sourceText={i.file_contents} lineHits={i.line_hits}/>
+                    <Result key={i.content_location} repoName={i.content_location} hits={i.hits}/>
                 ))}
             </div>
         );
@@ -87,16 +87,25 @@ const Result = (
     function render(props) {
         // to set line no starting, set style={{"counterReset": "line " + n}} on pre
         return (
-            <div className="result">
+            <div key={props.repoName} className="result">
                 <div className="result-title"><h3>{props.repoName}</h3></div>
                 <hr />
                 <div className="result-body">
-                    <pre className="result-text">
-                        {
-                            props.sourceText.map((val, ind) =>
-                                props.lineHits.includes(ind + 1)? <span className="highlight">{val}</span> : <span>{val}</span>)
-                        }
-                    </pre>
+                    {
+                        props.hits.map((hitContext, ind) => (
+                            <pre className="result-text" style={{"counterReset": "line " + hitContext.line_start}} key={ind}>
+                            {
+                                hitContext.lines.map((val, ind) =>
+                                     (
+                                         (ind === (hitContext.matching_line - hitContext.line_start - 1))
+                                                ? <span key={ind} className="highlight">{val}</span>
+                                                : <span key={ind}>{val}</span>
+                                     )
+                                )
+                            }
+                            </pre>
+                        ))
+                    }
                 </div>
             </div>
         );
