@@ -17,6 +17,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.IndexPluginLoader;
 import us.magicalash.weasel.plugin.PluginTask;
+import us.magicalash.weasel.plugin.PluginTaskService;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -30,10 +31,12 @@ public class WebIndexController {
 
     private final RestHighLevelClient restClient;
     private final IndexPluginLoader pluginLoader;
+    private final PluginTaskService taskService;
 
-    public WebIndexController(RestHighLevelClient restClient, IndexPluginLoader pluginLoader) {
+    public WebIndexController(RestHighLevelClient restClient, IndexPluginLoader pluginLoader, PluginTaskService service) {
         this.restClient = restClient;
         this.pluginLoader = pluginLoader;
+        this.taskService = service;
     }
 
     @PostMapping("/index")
@@ -58,7 +61,7 @@ public class WebIndexController {
                 return null;
             });
 
-
+            taskService.submit(task);
         }
 
         response.addProperty("status", "success");

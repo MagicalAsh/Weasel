@@ -13,4 +13,8 @@ public class SearchApplicationTests {
     public void contextLoads() {
     }
 
+    // TODO: figure out how to test this
+    // since elasticsearch's client can't be mocked, we can't properly search this  without a
+    // live elasticsearch instance. The options are either to require an elasticsearch instance
+    // in order to test, or run one inside the unit tests somehow. Neither option is nice. :(
 }
