@@ -83,6 +83,47 @@ class HeaderView extends Component {
     };
 }
 
+function loadFull(props) {
+    return () => {
+        let myHeaders = new Headers();
+        myHeaders.append('Content-Type', 'application/json');
+
+        fetch("http://localhost:9099/search/file/request", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "content_location": props.repoName
+            })
+        })
+        .then(r => r.json())
+        .then(obj => {
+            // todo fix this hack and make full source loading better
+            let fileMatch = {};
+            let fileHit = {
+                matches: [],
+                line_start: 0,
+                line_end: obj.file.line_count
+            };
+            let matches = [];
+            for (let hit of props.hits) {
+                matches.push.apply(matches, hit.matches)
+            }
+
+            fileHit.matches = matches;
+
+            fileHit.lines = obj.file.file_contents;
+            obj.file.file_contents = undefined;
+            fileMatch.file_data = obj.file;
+            fileMatch.hit_contexts = [fileHit];
+
+
+            ResultView.instance.setState({results: [fileMatch] || []});
+        })
+    }
+}
+
 const Result = (
     function render(props) {
         // to set line no starting, set style={{"counterReset": "line " + n}} on pre
@@ -106,6 +147,9 @@ const Result = (
                             </pre>
                         ))
                     }
+                </div>
+                <div className="fullSourceDiv">
+                    <button className="fullSourceButton" onClick={loadFull(props)}>Load full source</button>
                 </div>
             </div>
         );

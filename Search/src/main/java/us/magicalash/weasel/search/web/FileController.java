@@ -12,10 +12,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.core.env.Environment;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import us.magicalash.weasel.search.representation.FileRequestResponse;
 
 import java.io.IOException;
@@ -62,9 +59,9 @@ public class FileController {
 
     private SearchRequest makeRequest(String id, String branch) {
         BoolQueryBuilder builder = QueryBuilders.boolQuery();
-        builder.must(QueryBuilders.matchQuery(CONTENT_LOCATION, id));
+        builder.must(QueryBuilders.matchQuery(CONTENT_LOCATION + ".keyword", id));
         if (branch != null) {
-            builder.must(QueryBuilders.matchQuery(BRANCH, branch));
+            builder.must(QueryBuilders.matchQuery(BRANCH + ".keyword", branch));
         }
 
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();

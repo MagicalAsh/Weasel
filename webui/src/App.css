@@ -79,6 +79,7 @@
 
 .result-title {
   margin-left: 10px;
+  overflow: auto;
 }
 
 .result-text {
@@ -107,6 +108,19 @@
   margin-right: 0.5em;
   color: #888;
 }
+
+.fullSourceDiv {
+  display: inline-block;
+  text-align: center;
+  margin-bottom: 5px;
+  width: 100%;
+}
+
+.fullSourceButton {
+  background-color: #CCC;
+  border-radius: 10px;
+}
+
 
 .highlight {
   background: lightyellow;
