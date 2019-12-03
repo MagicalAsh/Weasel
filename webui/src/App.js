@@ -51,7 +51,7 @@ class HeaderView extends Component {
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/json');
 
-        fetch("http://localhost:9099/search/regex/search", {
+        fetch("/search/regex/search", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -88,7 +88,7 @@ function loadFull(props) {
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/json');
 
-        fetch("http://localhost:9099/search/file/request", {
+        fetch("/search/file/request", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
