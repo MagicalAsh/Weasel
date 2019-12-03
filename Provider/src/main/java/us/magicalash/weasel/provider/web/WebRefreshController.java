@@ -1,14 +1,9 @@
 package us.magicalash.weasel.provider.web;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import us.magicalash.weasel.plugin.PluginTask;
@@ -16,8 +11,10 @@ import us.magicalash.weasel.plugin.PluginTaskService;
 import us.magicalash.weasel.provider.configuration.SendingProperties;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 import us.magicalash.weasel.provider.plugin.ProviderPluginLoader;
+import us.magicalash.weasel.provider.representation.ProviderResponse;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -44,64 +41,52 @@ public class WebRefreshController {
     }
 
     @GetMapping("/refresh/{repoName}")
-    public JsonObject refresh(@PathVariable String repoName, HttpServletResponse servletResponse) {
-        JsonObject response = new JsonObject();
+    public ProviderResponse refresh(@PathVariable String repoName, HttpServletResponse servletResponse) {
+        ProviderResponse response = new ProviderResponse();
         if(!enabled) {
-            response.addProperty("status", "failed");
-            response.addProperty("reason", "Web refresh disabled.");
-            servletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getMetadata().setStatus("failed");
+            response.getMetadata().setMessage("Web refresh disabled.");
+            response.getMetadata().setResponseCode(HttpServletResponse.SC_FORBIDDEN);
             return response;
         }
 
         List<ProviderPlugin> plugins = pluginLoader.getApplicablePlugins(repoName);
-
-        JsonArray processed = new JsonArray();
+        List<String> processed = new ArrayList<>();
 
         for (ProviderPlugin plugin : plugins) {
-            PluginTask<JsonElement> task = new PluginTask<>();
-            task.setPluginName(plugin.getName());
-            task.setTask(() -> {
-                JsonElement output = plugin.refresh(repoName);
-
-                if (output.isJsonArray()) {
-                    for (JsonElement e : output.getAsJsonArray()) {
-                        send(e.toString());
-                    }
-                } else {
-                    send(output.toString());
-                }
-
-                return output;
-            });
+            taskService.submit(
+                PluginTask.builder()
+                    .pluginName(plugin.getName())
+                    .task(() -> {
+                        plugin.refresh(repoName, e -> send(e.toString()));
+                        return null;
+                    })
+                    .build()
+            );
 
             processed.add(plugin.getName());
-            this.taskService.submit(task);
         }
 
-        response.addProperty("status", "success");
-        response.add("scheduled_for", processed);
+        response.setBy(processed);
         return response;
     }
 
     @PostMapping("/refresh")
-    public JsonArray refresh(@RequestBody JsonArray body, HttpServletResponse servletResponse) {
-        JsonArray response = new JsonArray();
-        for (JsonElement element : body) {
-            response.add(refresh(element.getAsString(), servletResponse));
-        }
-
-        return response;
+    public ProviderResponse refresh(@RequestBody JsonObject body, HttpServletResponse servletResponse) {
+        return refresh(body.get("repo").getAsString(), servletResponse);
     }
 
-    private void send(String output) {
+    private Object send(String output) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity request = new HttpEntity<>(output, headers);
+        HttpEntity<String> request = new HttpEntity<>(output, headers);
 
         try {
-            template.exchange(sendingProperties.getAddress(), HttpMethod.POST, request, String.class);
+            ResponseEntity<?> e = template.exchange(sendingProperties.getAddress(), HttpMethod.POST, request, String.class);
+            return e.getBody();
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
     }
 }

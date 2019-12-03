@@ -1,15 +1,18 @@
 package us.magicalash.weasel.provider.web;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 import us.magicalash.weasel.provider.plugin.ProviderPluginLoader;
+import us.magicalash.weasel.provider.representation.ProvidedRepository;
+import us.magicalash.weasel.provider.representation.ProviderResponse;
+import us.magicalash.weasel.provider.representation.PullResponse;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -29,39 +32,34 @@ public class WebPullController {
     }
 
     @GetMapping("/pull/{repoName}")
-    public JsonObject refresh(@PathVariable String repoName, HttpServletResponse servletResponse) {
-        JsonObject response = new JsonObject();
+    public ProviderResponse refresh(@PathVariable String repoName, HttpServletResponse servletResponse) {
+        PullResponse response = new PullResponse();
         if(!enabled) {
-            response.addProperty("status", "failed");
-            response.addProperty("reason", "Web pull disabled.");
-            servletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getMetadata().setMessage("Web pull disabled.");
+            response.getMetadata().setResponseCode(HttpServletResponse.SC_FORBIDDEN);
             return response;
         }
 
         List<ProviderPlugin> plugins = pluginLoader.getApplicablePlugins(repoName);
 
-        JsonArray pluginResponses = new JsonArray();
+        List<ProvidedRepository> pluginResponses = new ArrayList<>();
         for (ProviderPlugin plugin : plugins) {
-            JsonObject provider = new JsonObject();
+            ProvidedRepository repo = new ProvidedRepository();
             JsonArray output = plugin.refresh(repoName);
 
-            provider.addProperty("processed_by", plugin.getName());
-            provider.add("result", output);
-            pluginResponses.add(provider);
+            repo.setProvided(output);
+            repo.setProvidedBy(plugin.getName());
+
+            pluginResponses.add(repo);
         }
 
-        response.addProperty("status", "success");
-        response.add("results", pluginResponses);
+        response.setFiles(pluginResponses);
         return response;
     }
 
     @PostMapping("/refresh")
-    public JsonArray refresh(@RequestBody JsonArray body, HttpServletResponse servletResponse) {
-        JsonArray response = new JsonArray();
-        for (JsonElement element : body) {
-            response.add(refresh(element.getAsString(), servletResponse));
-        }
-
-        return response;
+    public ProviderResponse refresh(@RequestBody JsonObject body, HttpServletResponse servletResponse) {
+        return refresh(body.get("repo").getAsString(), servletResponse);
     }
+
 }

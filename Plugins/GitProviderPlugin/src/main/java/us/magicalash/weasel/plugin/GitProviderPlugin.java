@@ -1,12 +1,15 @@
 package us.magicalash.weasel.plugin;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.LsRemoteCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.JGitInternalException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -25,6 +28,7 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class GitProviderPlugin implements ProviderPlugin {
     private static final Logger logger = LoggerFactory.getLogger(GitProviderPlugin.class);
@@ -57,7 +61,7 @@ public class GitProviderPlugin implements ProviderPlugin {
     @Override
     public boolean canRefresh(String name) {
         boolean canRefresh = false;
-        if (name.startsWith("file://") && isLocalRepo(name.replace("file://", ""))) {
+        if (name.startsWith("file+git://") && isLocalRepo(name.replace("file+git://", ""))) {
             canRefresh = true;
         }
 
@@ -69,14 +73,12 @@ public class GitProviderPlugin implements ProviderPlugin {
     }
 
     @Override
-    public JsonArray refresh(String name) {
-        JsonArray files = new JsonArray();
+    public void refresh(String name, Consumer<JsonElement> onProduce) {
         try {
-
             Repository repo = getRepo(name);
             List<Ref> call = new Git(repo).branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
             for (Ref ref : call) {
-                files.addAll(traverseBranch(ref.getName(), repo));
+                traverseBranch(ref.getName(), repo, onProduce);
             }
         } catch (IOException e) {
             logger.warn("Something went wrong while trying to refresh a git repository.", e);
@@ -85,18 +87,15 @@ public class GitProviderPlugin implements ProviderPlugin {
             logger.warn("Something went wrong while interacting with git.", e);
             throw new RuntimeException(e);
         }
-
-        return files;
     }
 
-    private JsonArray traverseBranch(String branchName, Repository repository) throws IOException, GitAPIException {
+    private void traverseBranch(String branchName, Repository repository, Consumer<JsonElement> onProduce) throws IOException, GitAPIException {
         if (globMatcher.isBlacklisted(branchName)) { // ignore blacklist branches
             if (!globMatcher.isWhitelisted(branchName)) { // don't ignore whitelisted ones though
-                return new JsonArray();
+                return;
             }
         }
 
-        JsonArray out = new JsonArray();
         Git git = new Git(repository);
         // checkout the branch so we can traverse it
         git.checkout().setName(branchName).setForced(true).call();
@@ -128,14 +127,16 @@ public class GitProviderPlugin implements ProviderPlugin {
                 fileData.addProperty("line_count", lines.size());
                 fileData.addProperty("commit_id", walk.getObjectId(0).name());
                 // todo add information about the file, like when commited etc
-                out.add(fileData);
+                onProduce.accept(fileData);
             }
         }
-
-        return out;
     }
 
     private Repository getRepo(String name){
+        if (name.startsWith("file+git://")) {
+            name = name.replace("file+git://", "");
+        }
+
         if (isRemoteRepo(name)) {
             Path workingDir = Paths.get(properties.getProperty(GitConstants.TEMP_DIR));
 
@@ -165,16 +166,13 @@ public class GitProviderPlugin implements ProviderPlugin {
 
     private boolean isLocalRepo(String name) {
         try {
-            Repository repo = new RepositoryBuilder().setWorkTree(new File(name)).build();
-            repo.close();
+            return new RepositoryBuilder().setWorkTree(new File(name)).build().getObjectDatabase().exists();
         } catch (RepositoryNotFoundException e) {
             return false; // This file isn't a repo. Good bye.
         } catch (IOException e) {
             logger.warn("Something went wrong while trying to build a local repository.", e);
             return false; // something else went wrong. Lets not try to process this.
         }
-
-        return true;
     }
 
     private boolean isRemoteRepo(String name) {
@@ -182,7 +180,7 @@ public class GitProviderPlugin implements ProviderPlugin {
         lsCmd.setRemote(name);
         try {
             lsCmd.call();
-        } catch (InvalidRemoteException e) {
+        } catch (InvalidRemoteException | TransportException | JGitInternalException e) {
             return false; // it's not a valid remote address in the first place, so we can't refresh it.
         } catch (GitAPIException e) {
             // Something went wrong while working with git. We may  not be able to recover from it, so we

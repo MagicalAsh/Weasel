@@ -28,7 +28,7 @@ class ResultView extends Component {
         return (
             <div>
                 {this.state.results.map(i => (
-                    <Result key={i.content_location} repoName={i.content_location} hits={i.hits}/>
+                    <Result key={i.file_data.content_location} repoName={i.file_data.content_location} hits={i.hit_contexts}/>
                 ))}
             </div>
         );
@@ -51,7 +51,7 @@ class HeaderView extends Component {
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/json');
 
-        fetch("/search/regex/search", {
+        fetch("http://localhost:9099/search/regex/search", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -97,7 +97,7 @@ const Result = (
                             {
                                 hitContext.lines.map((val, ind) =>
                                      (
-                                         hitContext.matching_lines.includes(ind + hitContext.line_start + 1)
+                                         hitContext.matches.includes(ind + hitContext.line_start + 1)
                                                 ? <span key={ind} className="highlight">{val}</span>
                                                 : <span key={ind}>{val}</span>
                                      )

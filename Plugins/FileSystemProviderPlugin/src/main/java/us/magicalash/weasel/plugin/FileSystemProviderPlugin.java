@@ -1,6 +1,7 @@
 package us.magicalash.weasel.plugin;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 
@@ -9,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static us.magicalash.weasel.plugin.FileSystemConstants.IGNORED_FILES;
 
@@ -47,29 +49,26 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
     }
 
     @Override
-    public JsonArray refresh(String name) {
-        JsonArray out = new JsonArray();
+    public void refresh(String name, Consumer<JsonElement> onProduce) {
         File root = new File(name.replace("file://", ""));
 
-        recursiveSearch(out, root);
-
-        return out;
+        recursiveSearch(onProduce, root);
     }
 
-    private JsonArray recursiveSearch(JsonArray array, File root){
+    private void recursiveSearch(Consumer<JsonElement> onFileGen, File root){
         // return early if this is ignored.
         if (matcher.isBlacklisted(root.getName())) {
-            return array;
+            return;
         }
 
         if (root.isDirectory()) {
             for (File file : Objects.requireNonNull(root.listFiles())) {
-                recursiveSearch(array, file);
+                recursiveSearch(onFileGen, file);
             }
         } else {
-            array.add(parseFile(root));
+            onFileGen.accept(parseFile(root));
         }
-        return array;
+        return;
     }
 
     private JsonObject parseFile(File file) {

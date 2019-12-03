@@ -46,20 +46,21 @@ public class WebIndexController {
 
         for (IndexPlugin plugin : pluginLoader.getApplicablePlugins(body)) {
             scheduled.add(plugin.getName());
-            PluginTask<JsonObject> task = new PluginTask<>();
-            task.setPluginName(plugin.getName());
-            task.setTask(() -> {
-                try {
-                    JsonObject result = plugin.index(body);
-                    restClient.index(buildQuery(result), RequestOptions.DEFAULT);
+            PluginTask<JsonObject> task = PluginTask.<JsonObject>builder()
+                .pluginName(plugin.getName())
+                .task(() -> {
+                    try {
+                        JsonObject result = plugin.index(body);
+                        restClient.index(buildQuery(result), RequestOptions.DEFAULT);
 
-                    return result;
-                } catch (IOException | IllegalArgumentException e) {
-                    logger.error("Errored while processing index request.", e);
-                }
+                        return result;
+                    } catch (IOException | IllegalArgumentException e) {
+                        logger.error("Errored while processing index request.", e);
+                    }
 
-                return null;
-            });
+                    return null;
+                })
+                .build();
 
             taskService.submit(task);
         }

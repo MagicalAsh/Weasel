@@ -1,6 +1,7 @@
 plugins {
     id 'org.springframework.boot' // version '2.1.6.RELEASE'
     id 'java'
+    id "io.freefair.aspectj.post-compile-weaving" version "4.1.5"
 }
 
 apply plugin: 'io.spring.dependency-management'
@@ -26,6 +27,10 @@ repositories {
 ext {
     set('springCloudVersion', "Greenwich.SR2")
     set('elasticsearch.version', "7.3.1")
+}
+
+aspectj {
+    version = "1.9.4"
 }
 
 dependencies {

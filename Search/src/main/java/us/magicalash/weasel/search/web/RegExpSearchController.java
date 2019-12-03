@@ -1,9 +1,11 @@
 package us.magicalash.weasel.search.web;
 
 import com.google.gson.*;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -17,8 +19,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
+import us.magicalash.weasel.representation.ApiMetadata;
+import us.magicalash.weasel.search.representation.FileHitContainer;
+import us.magicalash.weasel.search.representation.RegExpSearchResponse;
+import us.magicalash.weasel.search.representation.SearchHitContext;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/regex")
@@ -36,8 +44,8 @@ public class RegExpSearchController {
 
     @CrossOrigin
     @PostMapping("/search")
-    public JsonObject search(@RequestBody JsonObject body) {
-        JsonObject response = new JsonObject();
+    public RegExpSearchResponse search(@RequestBody JsonObject body) {
+        RegExpSearchResponse response = new RegExpSearchResponse();
 
         String regex = body.get("regex").getAsString();
         int context = defaultContext;
@@ -45,35 +53,43 @@ public class RegExpSearchController {
             context = body.get("match_context").getAsInt();
         }
 
-        response.addProperty("regex", regex);
+        response.setRegex(regex);
         SearchRequest request = searchRequest(regex);
         try {
             int hitCount = 0;
             SearchResponse search = client.search(request, RequestOptions.DEFAULT);
-            JsonArray array = new JsonArray();
+            List<FileHitContainer> array = new ArrayList<>();
             for(SearchHit hit : search.getHits()) {
                 String json = hit.getSourceAsString();
                 JsonObject source = new JsonParser().parse(json).getAsJsonObject();
-                JsonArray hits = getMatchingLines(hit, source);
+                List<Integer> hits = getMatchingLines(hit, source);
 
-                hits = sort(hits);
+                hits.sort(Integer::compareTo);
 
                 // now that we have where the hits are for this particular match, create an object for the matching file
-                JsonArray lineHits = createHitContexts(hits, source, context);
+                FileHitContainer file = createHitContexts(hits, source, context);
 
-                source.add("hits", lineHits);
+                array.add(file);
 
-                array.add(source);
                 hitCount++;
             }
-            response.add("hits", array);
-            response.addProperty("hit_count", hitCount);
+            response.setHits(array);
+            response.setHitCount(hitCount);
         } catch (IOException e) {
-            response.addProperty("status", "failed");
-            response.addProperty("response", e.getMessage());
+            ApiMetadata metadata = response.getMetadata();
+            metadata.setResponseCode(500);
+            metadata.setMessage(e.getMessage());
+        } catch (ElasticsearchStatusException e) {
+            ApiMetadata metadata = response.getMetadata();
+            metadata.setMessage(e.getMessage());
+            Throwable cause = e.getCause();
+            if (cause instanceof ResponseException) {
+                metadata.setResponseCode(((ResponseException) cause).getResponse().getStatusLine().getStatusCode());
+            } else {
+                metadata.setResponseCode(400);
+            }
         }
 
-        response.addProperty("status", "success");
         return response;
     }
 
@@ -94,12 +110,12 @@ public class RegExpSearchController {
                                   .source(sourceBuilder);
     }
 
-    private JsonArray getMatchingLines(SearchHit hit, JsonObject source){
-        JsonArray hits = new JsonArray();
+    private List<Integer> getMatchingLines(SearchHit hit, JsonObject source){
+        List<Integer> hits = new ArrayList<>();
         for(Text textMatch : hit.getHighlightFields().get("file_contents.keyword").getFragments()) {
             int i = 1;
             for (JsonElement line : source.getAsJsonArray("file_contents")) {
-                if (line.getAsString().contains(textMatch.toString()) && !hits.contains(new JsonPrimitive(i))) {
+                if (line.getAsString().contains(textMatch.toString()) && !hits.contains(i)) {
                     hits.add(i);
                 }
                 i++;
@@ -109,59 +125,44 @@ public class RegExpSearchController {
         return hits;
     }
 
-    private JsonArray createHitContexts(JsonArray hits, JsonObject source, int context) {
+    private FileHitContainer createHitContexts(List<Integer> hits, JsonObject source, int context) {
         JsonArray contents = source.remove("file_contents").getAsJsonArray();
-        JsonArray lineHits = new JsonArray();
+        FileHitContainer file = new FileHitContainer();
+        List<SearchHitContext> contexts = new ArrayList<>();
         for (int hitNum = 0; hitNum < hits.size(); hitNum++) {
-            JsonElement lineHit = hits.get(hitNum);
-            JsonObject hitContext = new JsonObject();
+            SearchHitContext hitContext = new SearchHitContext();
+            int lineHit = hits.get(hitNum);
             JsonArray hitNums = new JsonArray();
-            JsonArray lines = new JsonArray();
+            List<String> lines = new ArrayList<>();
 
             // - 1 to offset the matching line
-            int start = Math.max(lineHit.getAsInt() - context - 1, 0);
-            int end = Math.min(lineHit.getAsInt() + context - 1, contents.size() - 1);
+            int start = Math.max(lineHit - context - 1, 0);
+            int end = Math.min(lineHit + context - 1, contents.size() - 1);
 
             // if the next match has overlapping context, merge them
             hitNums.add(lineHit);
-            while (hitNum + 1 < hits.size() && (hits.get(hitNum + 1).getAsInt() - lineHit.getAsInt()) < 2*context) {
+            while (hitNum + 1 < hits.size() && (hits.get(hitNum + 1) - lineHit) < 2*context) {
                 hitNum++;
                 lineHit = hits.get(hitNum);
-                end = Math.min(lineHit.getAsInt() + context  - 1, contents.size() - 1);
+                end = Math.min(lineHit + context  - 1, contents.size() - 1);
                 hitNums.add(lineHit);
             }
 
             for (int i = start; i <= end; i++) {
-                lines.add(contents.get(i));
+                lines.add(contents.get(i).getAsString());
             }
 
-            hitContext.add("lines", lines);
-            hitContext.add("matching_lines", hitNums);
-            hitContext.addProperty("line_start", start);
-            hitContext.addProperty("line_end", end);
+            hitContext.setLines(lines);
+            hitContext.setMatches(hits);
+            hitContext.setStartingLine(start);
+            hitContext.setEndingLine(end);
 
-            lineHits.add(hitContext);
+            contexts.add(hitContext);
         }
 
-        return lineHits;
-    }
+        file.setContexts(contexts);
+        file.setFileData(source);
 
-    private JsonArray sort(JsonArray array) {
-        JsonArray newArray = new JsonArray();
-        while (array.size() > 0) {
-            JsonElement maxElement = null;
-            int min = Integer.MAX_VALUE;
-            for (int j = 0; j < array.size(); j++) {
-                if (array.get(j).getAsInt() < min) {
-                    maxElement = array.get(j);
-                    min = maxElement.getAsInt();
-                }
-            }
-
-            array.remove(maxElement);
-            newArray.add(min);
-        }
-
-        return newArray;
+        return file;
     }
 }

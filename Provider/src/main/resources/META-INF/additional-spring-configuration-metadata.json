@@ -24,6 +24,11 @@
       "name": "weasel.provider.plugin.files.ignored",
       "type": "java.util.List<java.lang.String>",
       "description": "Description for weasel.provider.plugin.files.ignored."
+    },
+    {
+      "name": "weasel.provider.pull.enabled",
+      "type": "java.lang.String",
+      "description": "Description for weasel.provider.pull.enabled."
     }
   ]
 }

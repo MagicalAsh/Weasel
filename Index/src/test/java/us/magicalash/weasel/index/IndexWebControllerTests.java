@@ -4,9 +4,11 @@ import com.google.gson.JsonObject;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.util.concurrent.ListenableFuture;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.IndexPluginLoader;
 import us.magicalash.weasel.index.web.WebIndexController;
+import us.magicalash.weasel.plugin.PluginTask;
 import us.magicalash.weasel.plugin.PluginTaskService;
 
 import java.util.Collections;
@@ -43,8 +45,10 @@ public class IndexWebControllerTests {
         // We can't actually run the tasks, as the elasticsearch client index method can't be mocked.
         // As such we can't actually test that the plugin gets run through the index plugin
         // without having elasticsearch available, which isn't appropriate in a unit test.
-        //when(taskService.submit(any())).then((invocation) ->
-        //       ((PluginTask) invocation.getArgument(0)).getTask().call());
+        when(taskService.submit(any())).then((invocation) -> {
+            ((PluginTask) invocation.getArgument(0)).getTask().call();
+            return mock(ListenableFuture.class);
+        });
 
     }
 

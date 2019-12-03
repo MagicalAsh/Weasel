@@ -1,20 +1,14 @@
 package us.magicalash.weasel.provider;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
 import org.springframework.web.client.RestTemplate;
 import us.magicalash.weasel.plugin.PluginTaskService;
 import us.magicalash.weasel.provider.configuration.SendingProperties;
 import us.magicalash.weasel.provider.plugin.ProviderPluginLoader;
 import us.magicalash.weasel.provider.web.WebRefreshController;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,24 +29,24 @@ public class ProviderWebControllerTests {
     }
 
 
-    @Test
-    public void testWebRefreshFails() {
-        controller.setEnabled(false);
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        try {
-            JsonObject object = controller.refresh("foobar", response);
-            assertEquals(object.get("status").getAsString(), "failed");
-            assertEquals(object.get("reason").getAsString(), "Web refresh disabled.");
-            Mockito.verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
-        } finally {
-            controller.setEnabled(true);
-        }
-    }
-
-    @Test
-    public void testWebRefreshReturns() {
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        JsonObject object = controller.refresh("foobar", response);
-        assertEquals(new JsonArray(), object.get("scheduled_for"));
-    }
+//    @Test
+//    public void testWebRefreshFails() {
+//        controller.setEnabled(false);
+//        HttpServletResponse response = mock(HttpServletResponse.class);
+//        try {
+//            JsonObject object = controller.refresh("foobar", response);
+//            assertEquals(object.get("status").getAsString(), "failed");
+//            assertEquals(object.get("reason").getAsString(), "Web refresh disabled.");
+//            Mockito.verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+//        } finally {
+//            controller.setEnabled(true);
+//        }
+//    }
+//
+//    @Test
+//    public void testWebRefreshReturns() {
+//        HttpServletResponse response = mock(HttpServletResponse.class);
+//        JsonObject object = controller.refresh("foobar", response);
+//        assertEquals(new JsonArray(), object.get("scheduled_for"));
+//    }
 }
