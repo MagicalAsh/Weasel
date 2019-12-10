@@ -49,12 +49,17 @@ public class RegExpSearchController {
 
         String regex = body.get("regex").getAsString();
         int context = defaultContext;
+        int numHits = -1;
         if (body.get("match_context") != null) {
             context = body.get("match_context").getAsInt();
         }
 
+        if (body.get("max_hits") != null) {
+            numHits =  body.get("max_hits").getAsInt();
+        }
+
         response.setRegex(regex);
-        SearchRequest request = searchRequest(regex);
+        SearchRequest request = searchRequest(regex, numHits);
         try {
             int hitCount = 0;
             SearchResponse search = client.search(request, RequestOptions.DEFAULT);
@@ -93,14 +98,14 @@ public class RegExpSearchController {
         return response;
     }
 
-    private SearchRequest searchRequest(String regex) {
+    private SearchRequest searchRequest(String regex, int hits) {
         // .keyword because we need the whole line, not each word
         RegexpQueryBuilder builder = QueryBuilders.regexpQuery("file_contents.keyword", regex);
         builder.flags(RegexpFlag.NONE);
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
         sourceBuilder.query(builder)
-                     .size(10)
-                     .terminateAfter(10)
+                     .size(hits > 0? hits : 10)
+                     .terminateAfter(hits > 0? hits : 10)
                      .highlighter(
                              new HighlightBuilder().field("file_contents.keyword")
                                                    .preTags("")
