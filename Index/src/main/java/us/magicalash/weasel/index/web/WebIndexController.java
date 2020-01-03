@@ -1,6 +1,5 @@
 package us.magicalash.weasel.index.web;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
@@ -8,19 +7,20 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpClientErrorException;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.IndexPluginLoader;
+import us.magicalash.weasel.index.representation.IndexingResponse;
+import us.magicalash.weasel.index.representation.ParsedIndexResponse;
 import us.magicalash.weasel.plugin.PluginTask;
 import us.magicalash.weasel.plugin.PluginTaskService;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 import static us.magicalash.weasel.index.plugin.IndexPlugin.DESTINATION;
 import static us.magicalash.weasel.index.plugin.IndexPlugin.SOURCE_ID;
@@ -40,12 +40,13 @@ public class WebIndexController {
     }
 
     @PostMapping("/index")
-    public JsonObject index(@RequestBody JsonObject body) {
-        JsonObject response = new JsonObject();
-        JsonArray scheduled = new JsonArray();
+    public IndexingResponse index(@RequestBody JsonObject body) {
+        IndexingResponse response = new IndexingResponse();
+        List<String> scheduled = new ArrayList<>();
 
         for (IndexPlugin plugin : pluginLoader.getApplicablePlugins(body)) {
             scheduled.add(plugin.getName());
+            // todo make a way to request failure messages
             PluginTask<JsonObject> task = PluginTask.<JsonObject>builder()
                 .pluginName(plugin.getName())
                 .task(() -> {
@@ -65,15 +66,16 @@ public class WebIndexController {
             taskService.submit(task);
         }
 
-        response.addProperty("status", "success");
-        response.add("scheduled_for", scheduled);
+        response.getMetadata().setStatus("scheduled");
+        response.setProcessedBy(scheduled);
         return response;
     }
 
     @PostMapping("/dry_run")
-    public JsonObject dryRun(@RequestBody JsonObject body) {
-        JsonObject response = new JsonObject();
-        JsonArray pluginResults = new JsonArray();
+    public ParsedIndexResponse dryRun(@RequestBody JsonObject body) {
+        ParsedIndexResponse response = new ParsedIndexResponse();
+        List<JsonObject> pluginResults = new ArrayList<>();
+        List<String> processed = new ArrayList<>();
 
         for (IndexPlugin plugin : pluginLoader.getApplicablePlugins(body)) {
             try {
@@ -84,18 +86,20 @@ public class WebIndexController {
                 pluginResult.add("result", result);
 
                 pluginResults.add(pluginResult);
-            } catch (IllegalArgumentException e) {
-                response.addProperty("status", "failed");
-                response.addProperty("reason", e.getMessage());
 
-                logger.error("", e);
-                throw HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Malformed Request",
-                        new HttpHeaders(), response.toString().getBytes(), Charset.defaultCharset());
+                processed.add(plugin.getName());
+            } catch (IllegalArgumentException e) {
+                response.getMetadata().setStatus("failed");
+                response.getMetadata().setMessage(e.getMessage());
+                response.getMetadata().setResponseCode(HttpServletResponse.SC_BAD_REQUEST);
+
+                return response;
             }
         }
 
-        response.addProperty("status", "success");
-        response.add("values", pluginResults);
+        response.getMetadata().setStatus("success");
+        response.setParsedResults(pluginResults);
+        response.setProcessedBy(processed);
         return response;
     }
 
