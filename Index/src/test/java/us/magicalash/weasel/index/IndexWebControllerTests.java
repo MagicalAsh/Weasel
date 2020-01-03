@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.springframework.util.concurrent.ListenableFuture;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.IndexPluginLoader;
+import us.magicalash.weasel.index.representation.ParsedIndexResponse;
 import us.magicalash.weasel.index.web.WebIndexController;
 import us.magicalash.weasel.plugin.PluginTask;
 import us.magicalash.weasel.plugin.PluginTaskService;
@@ -28,7 +29,11 @@ public class IndexWebControllerTests {
 
     @Before
     public void before() {
-        // WARNING: this rest client is *NOT* a full mock!
+        // WARNING: this rest client *MIGHT NOT BE* a full mock!
+        // You need to be using a recent version of Mockito which
+        // supports mocking final classes. The dependencies by default
+        // should pull this in, but if you see errors regarding the
+        // RestHighLevelClient, you may need to update Mockito.
         // See https://github.com/elastic/elasticsearch/issues/40534
         client = mock(RestHighLevelClient.class);
         loader = mock(IndexPluginLoader.class);
@@ -42,9 +47,8 @@ public class IndexWebControllerTests {
         when(loader.getApplicablePlugins(any())).thenReturn(Collections.singletonList(plugin));
         when(loader.getApplicablePlugins(any())).thenCallRealMethod();
 
-        // We can't actually run the tasks, as the elasticsearch client index method can't be mocked.
-        // As such we can't actually test that the plugin gets run through the index plugin
-        // without having elasticsearch available, which isn't appropriate in a unit test.
+        // NOTE: this *WILL* fail if Mockito is not running a version supporting
+        // final class mocking.
         when(taskService.submit(any())).then((invocation) -> {
             ((PluginTask) invocation.getArgument(0)).getTask().call();
             return mock(ListenableFuture.class);
@@ -68,13 +72,10 @@ public class IndexWebControllerTests {
 
     @Test
     public void testDryRun() {
-        JsonObject templateResponse = new JsonObject();
-        templateResponse.addProperty("status", "success");
+        ParsedIndexResponse response = controller.dryRun(new JsonObject());
 
-        JsonObject response = controller.dryRun(new JsonObject());
-
-        assertEquals(templateResponse.get("status"), response.get("status"));
-        assertNotNull(response.get("values"));
-        assertNotEquals(0, response.getAsJsonArray("values").size());
+        assertEquals("success", response.getMetadata().getStatus());
+        assertNotNull(response.getParsedResults());
+        assertNotEquals(0, response.getProcessedBy().size());
     }
 }
