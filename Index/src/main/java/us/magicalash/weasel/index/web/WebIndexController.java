@@ -1,5 +1,6 @@
 package us.magicalash.weasel.index.web;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
@@ -50,14 +51,13 @@ public class WebIndexController {
             PluginTask<JsonObject> task = PluginTask.<JsonObject>builder()
                 .pluginName(plugin.getName())
                 .task(() -> {
-                    try {
-                        JsonObject result = plugin.index(body);
-                        restClient.index(buildQuery(result), RequestOptions.DEFAULT);
-
-                        return result;
-                    } catch (IOException | IllegalArgumentException e) {
-                        logger.error("Errored while processing index request.", e);
-                    }
+                    plugin.index(body, jsonObject -> {
+                        try {
+                            restClient.index(buildQuery(jsonObject), RequestOptions.DEFAULT);
+                        } catch (IOException e) {
+                            logger.warn("Failed to index response!", e);
+                        }
+                    });
 
                     return null;
                 })
@@ -79,7 +79,7 @@ public class WebIndexController {
 
         for (IndexPlugin plugin : pluginLoader.getApplicablePlugins(body)) {
             try {
-                JsonObject result = plugin.index(body);
+                JsonArray result = (JsonArray) plugin.index(body);
                 JsonObject pluginResult = new JsonObject();
 
                 pluginResult.addProperty("plugin_name", plugin.getName());

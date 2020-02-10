@@ -1,7 +1,11 @@
 package us.magicalash.weasel.index.plugin;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import us.magicalash.weasel.plugin.WeaselPlugin;
+
+import java.util.function.Consumer;
 
 public interface IndexPlugin extends WeaselPlugin {
     String SOURCE_ID = "source_id";
@@ -27,5 +31,11 @@ public interface IndexPlugin extends WeaselPlugin {
      * @param obj the object to be indexed
      * @return the indexed form of the provided object
      */
-    JsonObject index(JsonObject obj);
+    default JsonElement index(JsonObject obj) {
+        JsonArray array = new JsonArray();
+        index(obj, array::add);
+        return array;
+    };
+
+    void index(JsonObject obj, Consumer<JsonObject> onCompletion);
 }

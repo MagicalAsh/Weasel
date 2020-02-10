@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 
 import java.util.Properties;
+import java.util.function.Consumer;
 
 public class NoOpParserPlugin implements IndexPlugin {
     private static final String INDEX_NAME = "raw_file_index";
@@ -28,9 +29,9 @@ public class NoOpParserPlugin implements IndexPlugin {
     }
 
     @Override
-    public JsonObject index(JsonObject obj) {
+    public void index(JsonObject obj, Consumer<JsonObject> onCompletion) {
         obj.addProperty(DESTINATION, INDEX_NAME);
         obj.addProperty(SOURCE_ID, obj.get("content_location").getAsString()); //todo figure out a better source_id
-        return obj;
+        onCompletion.accept(obj);
     }
 }
