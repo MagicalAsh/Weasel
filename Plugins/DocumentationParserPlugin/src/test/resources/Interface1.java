@@ -11,6 +11,12 @@ public interface Interface1 extends Bar {
     @Override
     public void bar();
 
+    /**
+     * AAAAaaa. AAAAAAAAAAA.
+     *
+     * @dummy foo bar foobar
+     *        fart bartholomew
+     */
     public default void bar2() {
         // dummy
     }

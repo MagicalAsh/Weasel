@@ -6,9 +6,6 @@ documentation
 	: JAVADOC_COMMENT
 	;
 
-
-
-
 compilationUnit
     : packageDeclaration? importDeclaration* typeDeclaration* EOF
     ;

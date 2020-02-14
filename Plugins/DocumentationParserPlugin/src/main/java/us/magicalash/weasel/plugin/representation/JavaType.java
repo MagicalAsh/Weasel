@@ -26,15 +26,39 @@ public class JavaType extends JavaCodeUnit {
     /**
      * A list of Strings representing the fully-qualified names of all interfaces being implemented.
      */
-    private List<String> implementsInterfaces = new ArrayList<>(0);
+    private List<String> implementsInterfaces;
 
     /**
      * A list of all fields within the class.
      */
-    private List<JavaVariable> fields = new ArrayList<>(0);
+    private List<JavaVariable> fields;
 
     /**
      * A list of all methods within the class.
      */
-    private List<JavaMethod> methods = new ArrayList<>(0);
+    private List<JavaMethod> methods;
+
+    public List<String> getImplementsInterfaces() {
+        if (implementsInterfaces == null) {
+            implementsInterfaces = new ArrayList<>(0);
+        }
+
+        return implementsInterfaces;
+    }
+
+    public List<JavaVariable> getFields() {
+        if (fields == null) {
+            fields = new ArrayList<>(0);
+        }
+
+        return fields;
+    }
+
+    public List<JavaMethod> getMethods() {
+        if (methods == null) {
+            methods = new ArrayList<>(0);
+        }
+
+        return methods;
+    }
 }

@@ -6,11 +6,8 @@ import com.google.gson.JsonObject;
 import org.junit.Test;
 import us.magicalash.weasel.plugin.DocumentationParserPlugin;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.Scanner;
-
-import static org.junit.Assert.fail;
 
 public class AntlrGrammarTest {
     @Test
@@ -19,7 +16,8 @@ public class AntlrGrammarTest {
         JsonObject obj = new JsonObject();
         JsonArray array = new JsonArray();
 
-        InputStream file = this.getClass().getClassLoader().getResourceAsStream("Annotation1.java");
+        InputStream file = this.getClass().getClassLoader().getResourceAsStream("Interface1.java");
+//        File file = new File("/home/wes/tmp/jdk/java.base/java/util/ArrayList.java");
         Scanner s;
         try {
             s = new Scanner(file);

@@ -2,6 +2,7 @@ package us.magicalash.weasel.plugin.representation;
 
 import lombok.Data;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,5 +19,13 @@ public class JavaDocumentation {
     /**
      * A list of all tags within the Javadoc comment.
      */
-    private List<Map<String, ?>> tags;
+    private Map<String, List<?>> tags;
+
+    public Map<String, List<?>> getTags() {
+        if (tags == null) {
+            tags = new HashMap<>();
+        }
+
+        return tags;
+    }
 }

@@ -23,12 +23,27 @@ public class JavaCodeUnit {
     /**
      * A list of all language-level modifiers that apply to this code unit.
      */
-    private List<String> modifiers = new ArrayList<>(0);
+    private List<String> modifiers;
 
     /**
      * A list of all annotations applied to this code unit. The key is the annotation name, the value is either a map
      * of the annotation element pairs, a list of map of the annotation element pairs (if the annotation is repeated),
      * the string value of the single parameter, or the empty string if no parameters are passed.
      */
-    private Map<String, Object> annotations = new HashMap<>(0);
+    private Map<String, Object> annotations;
+
+    public Map<String, Object> getAnnotations() {
+        if (annotations == null) {
+            annotations = new HashMap<>(); // if this gets called we definitely have an annotation
+        }
+        return annotations;
+    }
+
+    public List<String> getModifiers(){
+        if (modifiers == null) {
+            modifiers = new ArrayList<>(0);
+        }
+
+        return modifiers;
+    }
 }

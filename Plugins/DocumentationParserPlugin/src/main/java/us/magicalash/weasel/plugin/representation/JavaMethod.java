@@ -20,5 +20,13 @@ public class JavaMethod extends JavaCodeUnit {
     /**
      * A list of the parameters of the method.
      */
-    private List<JavaVariable> parameters = new ArrayList<>(0);
+    private List<JavaVariable> parameters;
+
+    public List<JavaVariable> getParameters() {
+        if (parameters == null) {
+            parameters = new ArrayList<>(0);
+        }
+
+        return parameters;
+    }
 }

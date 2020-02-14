@@ -1,6 +1,8 @@
 package us.magicalash.weasel.plugin;
 
 import lombok.Getter;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import us.magicalash.weasel.plugin.docparser.*;
@@ -14,7 +16,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             JavaDocumentationParser.ABSTRACT, JavaDocumentationParser.FINAL, JavaDocumentationParser.STATIC,
             JavaDocumentationParser.STRICTFP, JavaDocumentationParser.PUBLIC, JavaDocumentationParser.PROTECTED,
             JavaDocumentationParser.PRIVATE, JavaDocumentationParser.NATIVE, JavaDocumentationParser.TRANSIENT,
-            JavaDocumentationParser.VOLATILE, JavaDocumentationParser.SYNCHRONIZED
+            JavaDocumentationParser.VOLATILE, JavaDocumentationParser.SYNCHRONIZED, JavaDocumentationParser.DEFAULT
     };
 
     private String packageName;
@@ -68,11 +70,14 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         if (!packageName.equals(""))
             codeUnitsEncountered.pop();
 
-        // todo run doc parser
-        unit.setDocumentation(new JavaDocumentation());
-
         codeUnitsEncountered.push(unit);
+
         ctx.classOrInterfaceModifier().forEach(this::visit);
+
+        if (ctx.documentation() != null) {
+            visit(ctx.documentation());
+        }
+
         codeUnitsEncountered.pop();
 
         return unit;
@@ -85,7 +90,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         type.setName(getName(ctx.IDENTIFIER()));
 
         // technically this is an extends, but for simplicity
-        type.setImplementsInterfaces(getImplementedInterfaces(ctx.typeList()));
+        type.getImplementsInterfaces().addAll(getImplementedInterfaces(ctx.typeList()));
 
         type.setType(ctx.INTERFACE().getText());
 
@@ -239,8 +244,6 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         codeUnitsEncountered.push(method);
 
-        visit(ctx.formalParameters());
-
         for (AnnotationContext annotationContext : ctx.annotation())
             visit(annotationContext);
 
@@ -254,15 +257,21 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         codeUnitsEncountered.pop();
 
-        JavaCodeUnit unit = codeUnitsEncountered.peek();
-        if (unit instanceof JavaType) {
-            ((JavaType) unit).getMethods().add(method);
-        } else {
-            // this should never happen
-            throw new RuntimeException("Parent of interface method is not a type");
+        return manageParameters(method, ctx.formalParameters());
+    }
+
+    @Override
+    public JavaCodeUnit visitInterfaceMethodModifier(InterfaceMethodModifierContext ctx) {
+        List<String> keywordModifiers = codeUnitsEncountered.peek().getModifiers();
+
+        for (int name : KEYWORD_MODIFIERS) {
+            List<TerminalNode> nodes = ctx.getTokens(name);
+            for (TerminalNode node : nodes) {
+                keywordModifiers.add(node.getText());
+            }
         }
 
-        return method;
+        return null;
     }
 
     @Override
@@ -273,19 +282,23 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         constructor.setReturnType(ctx.IDENTIFIER().getText());
 
-        codeUnitsEncountered.push(constructor);
-        visit(ctx.formalParameters());
+        return manageParameters(constructor, ctx.formalParameters());
+    }
+
+    private JavaCodeUnit manageParameters(JavaMethod methodLike, FormalParametersContext formalParametersContext) {
+        codeUnitsEncountered.push(methodLike);
+        visit(formalParametersContext);
         codeUnitsEncountered.pop();
 
         JavaCodeUnit unit = codeUnitsEncountered.peek();
         if (unit instanceof JavaType) {
-            ((JavaType) unit).getMethods().add(constructor);
+            ((JavaType) unit).getMethods().add(methodLike);
         } else {
             // this should never happen
-            throw new RuntimeException("Parent of class constructor is not a type");
+            throw new RuntimeException("Parent of class method-like is not a type");
         }
 
-        return constructor;
+        return methodLike;
     }
 
     @Override
@@ -360,7 +373,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         type.setParentClass(getTypeName(ctx.typeType()));
 
-        type.setImplementsInterfaces(getImplementedInterfaces(ctx.typeList()));
+        type.getImplementsInterfaces().addAll(getImplementedInterfaces(ctx.typeList()));
 
         codeUnitsEncountered.push(type);
         visit(ctx.classBody());
@@ -404,21 +417,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             method.setReturnType(getTypeName(retTypeContext.typeType()));
         }
 
-        codeUnitsEncountered.push(method);
-
-        visit(ctx.formalParameters());
-
-        codeUnitsEncountered.pop();
-
-        JavaCodeUnit unit = codeUnitsEncountered.peek();
-        if (unit instanceof JavaType) {
-            ((JavaType) unit).getMethods().add(method);
-        } else {
-            // this should never happen
-            throw new RuntimeException("Parent of class constructor is not a type");
-        }
-
-        return method;
+        return manageParameters(method, ctx.formalParameters());
     }
 
     @Override
@@ -471,7 +470,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         type.setName(enumName);
 
-        type.setImplementsInterfaces(getImplementedInterfaces(ctx.typeList()));
+        type.getImplementsInterfaces().addAll(getImplementedInterfaces(ctx.typeList()));
 
         for (EnumConstantContext constantContext : ctx.enumConstants().enumConstant()) {
             JavaVariable enumValue = new JavaVariable();
@@ -664,5 +663,19 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         }
 
         return identifier.getText();
+    }
+
+    @Override
+    public JavaCodeUnit visitDocumentation(DocumentationContext ctx) {
+        String javadocComment = ctx.JAVADOC_COMMENT().getText();
+
+        JavadocLexer lexer = new JavadocLexer(CharStreams.fromString(javadocComment));
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        JavadocParser parser = new JavadocParser(tokens);
+
+        JavaCodeUnit unit = codeUnitsEncountered.peek();
+        unit.setDocumentation(new DocumentationVisitor().visit(parser.documentation()));
+
+        return null;
     }
 }
