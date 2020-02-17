@@ -46,6 +46,7 @@ public class GitProviderTest {
             Git.cloneRepository()
                     .setURI("https://github.com/MagicalAsh/discrete-biostatistics-project.git")
                     .setDirectory(temp)
+                    .setGitDir(new File(temp.getAbsoluteFile() + "/.git"))
                     .call();
 
             fileName = temp.getAbsolutePath();

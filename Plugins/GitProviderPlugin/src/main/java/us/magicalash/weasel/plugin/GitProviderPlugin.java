@@ -145,6 +145,7 @@ public class GitProviderPlugin implements ProviderPlugin {
 
                 Git git = Git.cloneRepository()
                                 .setDirectory(tempFile)
+                                .setGitDir(new File(tempFile.getAbsoluteFile() + "/.git"))
                                 .setURI(name)
                                 .call();
                 return git.getRepository();
