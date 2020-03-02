@@ -2,7 +2,11 @@ package us.magicalash.weasel.plugin;
 
 import com.google.gson.JsonObject;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
+import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 
@@ -29,9 +33,23 @@ public class NoOpParserPlugin implements IndexPlugin {
     }
 
     @Override
-    public void index(JsonObject obj, Consumer<JsonObject> onCompletion) {
-        obj.addProperty(DESTINATION, INDEX_NAME);
-        obj.addProperty(SOURCE_ID, obj.get("content_location").getAsString()); //todo figure out a better source_id
-        onCompletion.accept(obj);
+    public void index(JsonObject obj, Consumer<ParsedCodeUnit> onCompletion) {
+        ParsedCodeUnit unit = new ParsedCodeUnit();
+        unit.setDestinationIndex(INDEX_NAME);
+
+        if (obj.get("content_location") != null)
+            unit.setLocation(obj.get("content_location").getAsString());
+
+        if (obj.get("metadata") != null){
+            Map<String, String> map = new HashMap<>();
+            for(String key : obj.keySet()) {
+                map.put(key, obj.get(key).getAsString());
+            }
+            unit.setMetadata(map);
+        }
+
+        unit.setParsedObject(obj.get("file_contents"));
+        unit.setIndexedBy(getName());
+        onCompletion.accept(unit);
     }
 }

@@ -1,5 +1,7 @@
 package us.magicalash.weasel.index;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.Before;
@@ -7,12 +9,15 @@ import org.junit.Test;
 import org.springframework.util.concurrent.ListenableFuture;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.IndexPluginLoader;
+import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
 import us.magicalash.weasel.index.representation.ParsedIndexResponse;
 import us.magicalash.weasel.index.web.WebIndexController;
 import us.magicalash.weasel.plugin.PluginTask;
 import us.magicalash.weasel.plugin.PluginTaskService;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,6 +26,7 @@ import static us.magicalash.weasel.index.plugin.IndexPlugin.DESTINATION;
 import static us.magicalash.weasel.index.plugin.IndexPlugin.SOURCE_ID;
 
 public class IndexWebControllerTests {
+    private Gson gson;
     private IndexPlugin plugin;
     private WebIndexController controller;
     private RestHighLevelClient client;
@@ -40,7 +46,10 @@ public class IndexWebControllerTests {
         taskService = mock(PluginTaskService.class);
         plugin = mock(IndexPlugin.class);
 
-        controller = new WebIndexController(client, loader, taskService);
+        gson = new GsonBuilder().setPrettyPrinting().create();
+
+        controller = new WebIndexController(client, loader, taskService, gson);
+
 
         when(plugin.canIndex(any())).thenReturn(true);
         when(loader.getLoadedPlugins()).thenReturn(Collections.singletonList(plugin));
@@ -62,7 +71,13 @@ public class IndexWebControllerTests {
         object.addProperty(SOURCE_ID, "a");
         object.addProperty(DESTINATION, "a");
 
-        when(plugin.index(any())).thenReturn(object);
+        ParsedCodeUnit unit = new ParsedCodeUnit();
+        unit.setLocation("a");
+        unit.setDestinationIndex("a");
+        List<ParsedCodeUnit> out = new ArrayList<>();
+        out.add(unit);
+
+        when(plugin.index(any())).thenReturn(out);
         controller.index(object);
 
         verify(taskService, times(1)).submit(any());

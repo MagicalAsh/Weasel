@@ -1,5 +1,6 @@
 package us.magicalash.weasel.index.web;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.elasticsearch.action.index.IndexRequest;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.IndexPluginLoader;
+import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
 import us.magicalash.weasel.index.representation.IndexingResponse;
 import us.magicalash.weasel.index.representation.ParsedIndexResponse;
 import us.magicalash.weasel.plugin.PluginTask;
@@ -30,14 +32,17 @@ import static us.magicalash.weasel.index.plugin.IndexPlugin.SOURCE_ID;
 public class WebIndexController {
     private static final Logger logger = LoggerFactory.getLogger(WebIndexController.class);
 
+    private final Gson gson;
     private final RestHighLevelClient restClient;
     private final IndexPluginLoader pluginLoader;
     private final PluginTaskService taskService;
 
-    public WebIndexController(RestHighLevelClient restClient, IndexPluginLoader pluginLoader, PluginTaskService service) {
+    public WebIndexController(RestHighLevelClient restClient, IndexPluginLoader pluginLoader, PluginTaskService service,
+                              Gson gson) {
         this.restClient = restClient;
         this.pluginLoader = pluginLoader;
         this.taskService = service;
+        this.gson = gson;
     }
 
     @PostMapping("/index")
@@ -51,9 +56,9 @@ public class WebIndexController {
             PluginTask<JsonObject> task = PluginTask.<JsonObject>builder()
                 .pluginName(plugin.getName())
                 .task(() -> {
-                    plugin.index(body, jsonObject -> {
+                    plugin.index(body, codeUnit -> {
                         try {
-                            restClient.index(buildQuery(jsonObject), RequestOptions.DEFAULT);
+                            restClient.index(buildQuery(codeUnit), RequestOptions.DEFAULT);
                         } catch (IOException e) {
                             logger.warn("Failed to index response!", e);
                         }
@@ -79,7 +84,7 @@ public class WebIndexController {
 
         for (IndexPlugin plugin : pluginLoader.getApplicablePlugins(body)) {
             try {
-                JsonArray result = (JsonArray) plugin.index(body);
+                JsonArray result = (JsonArray) gson.toJsonTree(plugin.index(body));
                 JsonObject pluginResult = new JsonObject();
 
                 pluginResult.addProperty("plugin_name", plugin.getName());
@@ -103,9 +108,9 @@ public class WebIndexController {
         return response;
     }
 
-    private IndexRequest buildQuery(JsonObject object) {
-        return new IndexRequest().id(object.remove(SOURCE_ID).getAsString())
-                                 .index(object.remove(DESTINATION).getAsString())
-                                 .source(object.toString(), XContentType.JSON);
+    private IndexRequest buildQuery(ParsedCodeUnit object) {
+        return new IndexRequest().id(object.getIndexId())
+                                 .index(object.getDestinationIndex())
+                                 .source(gson.toJson(object), XContentType.JSON);
     }
 }

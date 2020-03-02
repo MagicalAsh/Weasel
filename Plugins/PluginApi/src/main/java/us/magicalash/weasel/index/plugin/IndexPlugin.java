@@ -3,8 +3,11 @@ package us.magicalash.weasel.index.plugin;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
 import us.magicalash.weasel.plugin.WeaselPlugin;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public interface IndexPlugin extends WeaselPlugin {
@@ -31,11 +34,23 @@ public interface IndexPlugin extends WeaselPlugin {
      * @param obj the object to be indexed
      * @return the indexed form of the provided object
      */
-    default JsonElement index(JsonObject obj) {
-        JsonArray array = new JsonArray();
+    default List<ParsedCodeUnit> index(JsonObject obj) {
+        List<ParsedCodeUnit> array = new ArrayList<>();
         index(obj, array::add);
         return array;
     };
 
-    void index(JsonObject obj, Consumer<JsonObject> onCompletion);
+    /**
+     * Indexes the provided object into a serializable object.
+     *
+     * This method allows for parsing sub-objects and returning a
+     * series of objects, rather than one all at once. Additionally,
+     * this allows for plugins parsing sub-objects to properly parallelize
+     * output of multiple objects.
+     *
+     * @param obj           the object to be indexed
+     * @param onCompletion  a consumer reacting to a produced object. This
+     *                      parameter should be thread-safe.
+     */
+    void index(JsonObject obj, Consumer<ParsedCodeUnit> onCompletion);
 }

@@ -1,6 +1,7 @@
 package us.magicalash.weasel.plugin.representation;
 
 import lombok.Data;
+import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
 
 import java.util.*;
 
