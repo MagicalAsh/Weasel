@@ -43,3 +43,11 @@ generateGrammarSource {
     arguments += ['-package', 'us.magicalash.weasel.plugin.docparser', "-visitor"]
     outputDirectory = new File(buildDir.toString() + "/generated-src/antlr/main/us/magicalash/weasel/plugin/docparser")
 }
+
+// copy all of the dependencies into libs as well
+task copyToLib(type: Copy) {
+    into "$buildDir/libs"
+    from (configurations.runtimeClasspath - project(":CommonConfiguration").configurations.runtimeClasspath)
+}
+
+build.dependsOn(copyToLib)
