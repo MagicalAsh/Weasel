@@ -32,7 +32,10 @@ public class DocumentationParserPlugin implements IndexPlugin {
 
     @Override
     public boolean canIndex(JsonObject obj) {
-        return false;
+        if (obj.get("content_location") != null) {
+            return obj.get("content_location").getAsString().endsWith(".java");
+        }
+         return false;
     }
 
     @Override
@@ -68,7 +71,7 @@ public class DocumentationParserPlugin implements IndexPlugin {
 
             unit.setDestinationIndex("parsed_java");
             unit.setParsedObject(type);
-            //todo set metadata
+
             onCompletion.accept(unit);
         }
     }
