@@ -1,9 +1,8 @@
 package us.magicalash.weasel.plugin;
 
 import com.google.gson.*;
-import org.antlr.v4.runtime.ANTLRErrorStrategy;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
 import us.magicalash.weasel.plugin.docparser.JavaDocumentationLexer;
@@ -50,8 +49,15 @@ public class DocumentationParserPlugin implements IndexPlugin {
         JavaDocumentationLexer lexer = new JavaDocumentationLexer(CharStreams.fromString(contents.toString()));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         JavaDocumentationParser parser = new JavaDocumentationParser(tokens);
+        parser.setErrorHandler(new BailErrorStrategy());
+
         CodeVisitor listener = new CodeVisitor();
-        listener.visit(parser.compilationUnit());
+        try {
+            listener.visit(parser.compilationUnit());
+        } catch (ParseCancellationException e) {
+            // parsing of this object failed
+            return;
+        }
 
         // todo parent/child relations might be a better idea here than normal direct indexing
         for (JavaType type : listener.getTypes()) {

@@ -1,8 +1,10 @@
 package us.magicalash.weasel.plugin;
 
 import lombok.Getter;
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import us.magicalash.weasel.plugin.docparser.*;
@@ -10,6 +12,7 @@ import us.magicalash.weasel.plugin.docparser.JavaDocumentationParser.*;
 import us.magicalash.weasel.plugin.representation.*;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit> {
     private static final int[] KEYWORD_MODIFIERS = {
@@ -39,6 +42,14 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         codeUnitsEncountered = new ArrayDeque<>();
         packageName = "";
         imports = new HashMap<>();
+    }
+
+    @Override
+    public JavaCodeUnit visit(ParseTree tree) {
+        if (tree != null)
+            return super.visit(tree);
+        else
+            return null;
     }
 
     @Override
@@ -672,9 +683,14 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         JavadocLexer lexer = new JavadocLexer(CharStreams.fromString(javadocComment));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         JavadocParser parser = new JavadocParser(tokens);
+        parser.setErrorHandler(new BailErrorStrategy());
 
         JavaCodeUnit unit = codeUnitsEncountered.peek();
-        unit.setDocumentation(new DocumentationVisitor().visit(parser.documentation()));
+        try {
+            unit.setDocumentation(new DocumentationVisitor().visit(parser.documentation()));
+        } catch (ParseCancellationException e) {
+            // parsing failed. We should warn, but we don't have access to the loggers. Oh no!
+        }
 
         return null;
     }
