@@ -31,9 +31,9 @@ public class JavaCodeUnit {
      * of the annotation element pairs, a list of map of the annotation element pairs (if the annotation is repeated),
      * the string value of the single parameter, or the empty string if no parameters are passed.
      */
-    private Map<String, Object> annotations;
+    private Map<String, Map<String, String>> annotations;
 
-    public Map<String, Object> getAnnotations() {
+    public Map<String, Map<String, String>> getAnnotations() {
         if (annotations == null) {
             annotations = new HashMap<>(); // if this gets called we definitely have an annotation
         }

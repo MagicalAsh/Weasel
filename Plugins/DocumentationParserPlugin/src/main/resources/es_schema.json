@@ -1,0 +1,81 @@
+{
+  "settings" : {
+    "index" : {
+      "number_of_shards" : 5,
+      "number_of_replicas" : 2
+    }
+  },
+  "mappings": {
+    "properties": {
+      "content_location": {
+        "type": "text"
+      },
+      "indexed_by": {
+        "type": "keyword"
+      },
+      "metadata": {
+        "type": "object"
+      },
+      "parsed_result": {
+        "type": "object",
+        "properties": {
+          "documentation": {
+            "type": "object"
+          },
+          "modifiers": {
+            "type": "text"
+          },
+          "annotations": {
+            "type": "object"
+          },
+          "type": {
+            "type": "text"
+          },
+          "parentClass": {
+            "type": "text"
+          },
+          "implementsInterfaces": {
+            "type": "text"
+          },
+          "fields": {
+            "type": "nested",
+            "properties": {
+              "type": {
+                "type": "text"
+              },
+              "documentation": {
+                "type": "object"
+              },
+              "modifiers": {
+                "type": "text"
+              },
+              "annotations": {
+                "type": "object"
+              }
+            }
+          },
+          "methods": {
+            "type": "nested",
+            "properties": {
+              "documentation": {
+                "type": "object"
+              },
+              "modifiers": {
+                "type": "text"
+              },
+              "annotations": {
+                "type": "object"
+              },
+              "returnType": {
+                "type": "text"
+              },
+              "parameters": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

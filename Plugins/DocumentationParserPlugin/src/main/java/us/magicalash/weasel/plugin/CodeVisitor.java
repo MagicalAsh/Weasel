@@ -584,7 +584,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
     @Override
     public JavaCodeUnit visitAnnotation(AnnotationContext context) {
-        Map<String, Object> annotations = codeUnitsEncountered.peek().getAnnotations();
+        Map<String, Map<String, String>> annotations = codeUnitsEncountered.peek().getAnnotations();
 
         String name = getFullyQualifiedName(context.qualifiedName());
         if (imports.containsKey(name)) {
@@ -595,7 +595,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         // the answer is probably yes, but I'd like to see some use for it first
 
         if (context.elementValue() != null) { // single value
-            annotations.put(name, context.elementValue().getText());
+            HashMap<String, String> innerMap = new HashMap<>();
+            innerMap.put(name, context.elementValue().getText());
+            annotations.put("#body", innerMap);
         } else if (context.elementValuePairs() != null) { //multiple value pairs
             Map<String, String> annotationParameters = new HashMap<>();
             for (ElementValuePairContext pairContext : context.elementValuePairs().elementValuePair()){
@@ -603,7 +605,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             }
             annotations.put(name, annotationParameters);
         } else { // no parameters at all
-            annotations.put(name, "");
+            annotations.put(name, new HashMap<>());
         }
 
         return null;
