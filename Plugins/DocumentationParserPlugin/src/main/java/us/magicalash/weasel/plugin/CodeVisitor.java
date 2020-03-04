@@ -597,8 +597,8 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         if (context.elementValue() != null) { // single value
             HashMap<String, String> innerMap = new HashMap<>();
-            innerMap.put(name, context.elementValue().getText());
-            annotations.put("#body", innerMap);
+            innerMap.put("#body", context.elementValue().getText());
+            annotations.put(name, innerMap);
         } else if (context.elementValuePairs() != null) { //multiple value pairs
             Map<String, String> annotationParameters = new HashMap<>();
             for (ElementValuePairContext pairContext : context.elementValuePairs().elementValuePair()){
