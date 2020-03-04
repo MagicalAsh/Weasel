@@ -3,7 +3,7 @@ parser grammar JavaDocumentationParser;
 options { tokenVocab=JavaDocumentationLexer; }
 
 documentation
-	: JAVADOC_COMMENT
+	: JAVADOC_COMMENT+
 	;
 
 compilationUnit
@@ -77,7 +77,7 @@ enumConstants
     ;
 
 enumConstant
-    : annotation* IDENTIFIER arguments? classBody?
+    : annotation* documentation? IDENTIFIER arguments? classBody?
     ;
 
 enumBodyDeclarations

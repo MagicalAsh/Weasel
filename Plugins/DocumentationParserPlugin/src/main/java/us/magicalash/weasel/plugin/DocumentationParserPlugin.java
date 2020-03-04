@@ -47,9 +47,15 @@ public class DocumentationParserPlugin implements IndexPlugin {
         }
 
         JavaDocumentationLexer lexer = new JavaDocumentationLexer(CharStreams.fromString(contents.toString()));
+
+        // why is this on by default?
+        lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
+
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         JavaDocumentationParser parser = new JavaDocumentationParser(tokens);
-        parser.setErrorHandler(new BailErrorStrategy());
+        parser.setErrorHandler(new CommentIgnoringBailStrategy());
+        parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
+
 
         CodeVisitor listener = new CodeVisitor();
         try {

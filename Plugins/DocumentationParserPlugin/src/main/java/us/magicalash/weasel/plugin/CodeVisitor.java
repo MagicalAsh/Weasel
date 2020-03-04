@@ -4,6 +4,7 @@ import lombok.Getter;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ConsoleErrorListener;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -680,12 +681,21 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
     @Override
     public JavaCodeUnit visitDocumentation(DocumentationContext ctx) {
-        String javadocComment = ctx.JAVADOC_COMMENT().getText();
+        // because this is technically legal, we have to allow for multiple in a row.
+        // the javadoc tool only gets the last one though, so we'll continue that precedent
+        // We can't handle this with the error strategy though, as it'll pick the first
+        // rather than the last.
+        String javadocComment = ctx.JAVADOC_COMMENT().get(ctx.JAVADOC_COMMENT().size() - 1).getText();
 
         JavadocLexer lexer = new JavadocLexer(CharStreams.fromString(javadocComment));
+
+        // why is this on by default?
+        lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
+
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         JavadocParser parser = new JavadocParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
+        parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
         JavaCodeUnit unit = codeUnitsEncountered.peek();
         try {
