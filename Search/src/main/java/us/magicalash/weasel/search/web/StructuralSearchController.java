@@ -12,7 +12,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import us.magicalash.weasel.representation.ApiMetadata;
 import us.magicalash.weasel.search.representation.FileHitContainer;
@@ -133,9 +132,12 @@ public class StructuralSearchController {
         fixQualifiedNames(request, "extends");
         fixQualifiedNames(request, "interfaces");
 
-        addListQueryToBuilder(builder, request, "extends", "parsed_result.parentClass.keyword");
-        addListQueryToBuilder(builder, request, "interfaces", "parsed_result.implementsInterfaces.keyword");
-        addListQueryToBuilder(builder, request, "modifiers", "parsed_result.modifiers.keyword");
+        // these don't get keyword as they are already keyword types.
+        addListQueryToBuilder(builder, request, "extends", "parsed_result.parentClass");
+        addListQueryToBuilder(builder, request, "interfaces", "parsed_result.implementsInterfaces");
+        addListQueryToBuilder(builder, request, "modifiers", "parsed_result.modifiers");
+
+        // these two get keyword since I apparently didn't specify them in the schema at all. Oops.
         addListQueryToBuilder(builder, request, "field_names", "parsed_result.fields.name.keyword");
         addListQueryToBuilder(builder, request, "method_names", "parsed_result.methods.name.keyword");
 

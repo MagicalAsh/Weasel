@@ -23,31 +23,31 @@
             "type": "object"
           },
           "modifiers": {
-            "type": "text"
+            "type": "keyword"
           },
           "annotations": {
             "type": "object"
           },
           "type": {
-            "type": "text"
+            "type": "keyword"
           },
           "parentClass": {
-            "type": "text"
+            "type": "keyword"
           },
           "implementsInterfaces": {
-            "type": "text"
+            "type": "keyword"
           },
           "fields": {
             "type": "nested",
             "properties": {
               "type": {
-                "type": "text"
+                "type": "keyword"
               },
               "documentation": {
                 "type": "object"
               },
               "modifiers": {
-                "type": "text"
+                "type": "keyword"
               },
               "annotations": {
                 "type": "object"
@@ -61,13 +61,13 @@
                 "type": "object"
               },
               "modifiers": {
-                "type": "text"
+                "type": "keyword"
               },
               "annotations": {
                 "type": "object"
               },
               "returnType": {
-                "type": "text"
+                "type": "keyword"
               },
               "parameters": {
                 "type": "object"
