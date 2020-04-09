@@ -62,6 +62,7 @@ public class DocumentationParserPlugin implements IndexPlugin {
             listener.visit(parser.compilationUnit());
         } catch (ParseCancellationException e) {
             // parsing of this object failed
+            e.printStackTrace();
             return;
         }
 

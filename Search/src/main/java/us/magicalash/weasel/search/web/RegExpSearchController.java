@@ -100,14 +100,14 @@ public class RegExpSearchController {
 
     private SearchRequest searchRequest(String regex, int hits) {
         // .keyword because we need the whole line, not each word
-        RegexpQueryBuilder builder = QueryBuilders.regexpQuery("file_contents.keyword", regex);
+        RegexpQueryBuilder builder = QueryBuilders.regexpQuery("parsed_result.keyword", regex);
         builder.flags(RegexpFlag.NONE);
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
         sourceBuilder.query(builder)
                      .size(hits > 0? hits : 10)
                      .terminateAfter(hits > 0? hits : 10)
                      .highlighter(
-                             new HighlightBuilder().field("file_contents.keyword")
+                             new HighlightBuilder().field("parsed_result.keyword")
                                                    .preTags("")
                                                    .postTags("")
                      );
@@ -117,9 +117,9 @@ public class RegExpSearchController {
 
     private List<Integer> getMatchingLines(SearchHit hit, JsonObject source){
         List<Integer> hits = new ArrayList<>();
-        for(Text textMatch : hit.getHighlightFields().get("file_contents.keyword").getFragments()) {
+        for(Text textMatch : hit.getHighlightFields().get("parsed_result.keyword").getFragments()) {
             int i = 1;
-            for (JsonElement line : source.getAsJsonArray("file_contents")) {
+            for (JsonElement line : source.getAsJsonArray("parsed_result")) {
                 if (line.getAsString().contains(textMatch.toString()) && !hits.contains(i)) {
                     hits.add(i);
                 }
@@ -131,7 +131,7 @@ public class RegExpSearchController {
     }
 
     private FileHitContainer createHitContexts(List<Integer> hits, JsonObject source, int context) {
-        JsonArray contents = source.remove("file_contents").getAsJsonArray();
+        JsonArray contents = source.remove("parsed_result").getAsJsonArray();
         FileHitContainer file = new FileHitContainer();
         List<SearchHitContext> contexts = new ArrayList<>();
         for (int hitNum = 0; hitNum < hits.size(); hitNum++) {

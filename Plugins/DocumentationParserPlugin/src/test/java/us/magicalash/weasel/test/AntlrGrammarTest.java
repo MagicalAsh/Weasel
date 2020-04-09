@@ -16,7 +16,7 @@ public class AntlrGrammarTest {
         JsonObject obj = new JsonObject();
         JsonArray array = new JsonArray();
 
-        InputStream file = this.getClass().getClassLoader().getResourceAsStream("Interface1.java");
+        InputStream file = this.getClass().getClassLoader().getResourceAsStream("Weird.java");
 //        File file = new File("/home/wes/tmp/jdk/java.base/java/util/ArrayList.java");
         Scanner s;
         try {

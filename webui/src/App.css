@@ -17,9 +17,9 @@
   margin: auto;
   padding: 20px;
   color: white;
-  position: fixed;
+  /*position: fixed;*/
   top: 0;
-  width: 100%;
+  /*width: 100%;*/
 }
 
 .App-intro {
@@ -124,4 +124,54 @@
 
 .highlight {
   background: lightyellow;
+}
+
+.preInputText {
+  font-size: 15pt;
+  font-family: 'Inconsolata', monospace;
+  font-weight: lighter;
+  color: #333333;
+  border-radius: 100vh 0 0 100vh;
+  background-color: #FFFFFF;
+  width: 17%;
+  text-align: left;
+}
+
+.structuralInput {
+  font-size: 15pt;
+  font-family: 'Inconsolata', monospace;
+  font-weight: lighter;
+  color: #333333;
+  border-radius: 0 100vh 100vh 0;
+  width: 63%;
+}
+
+.structSearch {
+  padding: 4px 12px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #fff;
+  box-sizing: border-box;
+  height: 30px;
+  vertical-align: middle;
+  outline: none;
+}
+
+.structSearchButton {
+  background-color: cornflowerblue;
+  color: #FFFFFF;
+  padding: 0;
+  border-radius: 100vh 100vh 100vh 100vh;
+  font-size: 15pt;
+  width: 80%;
+}
+
+.selector {
+  background-color: #FFFFFF;
+  border-radius: 100vh 100vh 100vh 100vh;
+  font-size: 24pt;
+  font-family: 'Inconsolata', monospace;
+  font-weight: lighter;
+  color: #333333;
+  width: 80%;
 }

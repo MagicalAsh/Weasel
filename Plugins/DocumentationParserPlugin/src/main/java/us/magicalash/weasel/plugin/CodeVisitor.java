@@ -90,6 +90,8 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             visit(ctx.documentation());
         }
 
+        unit.setStartLine(ctx.start.getLine());
+        unit.setEndLine(ctx.stop.getLine());
         codeUnitsEncountered.pop();
 
         return unit;
@@ -360,6 +362,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             //todo make this handle 'Type name[]' type declarations
             variable.setName(context.variableDeclaratorId().IDENTIFIER().getText());
 
+            variable.setStartLine(context.start.getLine());
+            variable.setEndLine(context.stop.getLine());
+
             variables.add(variable);
 
             parent.getFields().add(variable);
@@ -429,6 +434,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             method.setReturnType(getTypeName(retTypeContext.typeType()));
         }
 
+        method.setStartLine(ctx.start.getLine());
+        method.setEndLine(ctx.stop.getLine());
+
         return manageParameters(method, ctx.formalParameters());
     }
 
@@ -473,7 +481,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         JavaType type = new JavaType();
 
         // All enums implicitly extend java.lang.Enum
-        type.setParentClass("java.lang.Enum");
+        type.setParentClass("java/lang/Enum");
 
         type.setType(ctx.ENUM().getText());
 
@@ -513,14 +521,21 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
     @Override
     public JavaCodeUnit visitPackageDeclaration(JavaDocumentationParser.PackageDeclarationContext ctx) {
-        packageName = ctx.qualifiedName().getText();
+        // Since the expected database is elasticsearch, this fixes an issues with
+        // mapping explosions. Elasticsearch internally remodels objects, flattening
+        // names to be of the form "outer_object.inner_object.field". Apparently
+        // inserting names with the '.' character causes elasticsearch to insert these
+        // as subobjects, and causes elasticsearch to generate a LOT of mappings for only
+        // a few names. It's also an issue when parsing imports.
+        packageName = ctx.qualifiedName().getText().replaceAll("\\.", "/");
         return super.visitPackageDeclaration(ctx);
     }
 
     @Override
     public JavaCodeUnit visitImportDeclaration(ImportDeclarationContext ctx) {
+        // see the above comment explaining why '.' is replaced with '/'.
         JavaDocumentationParser.QualifiedNameContext fqnContext = ctx.qualifiedName();
-        String fqn = fqnContext.getText();
+        String fqn = fqnContext.getText().replaceAll("\\.", "/");
         int totalIdentifiers = fqnContext.IDENTIFIER().size();
         String className = fqnContext.IDENTIFIER(totalIdentifiers - 1).getText();
 
@@ -623,7 +638,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
     private String getTypeName(TypeTypeContext context) {
         if (context == null) {
-            return "java.lang.Object";
+            return "java/lang/Object";
         }
 
         StringBuilder name = new StringBuilder();
@@ -672,7 +687,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         // find the most recent type, and add its name onto the end
         for (JavaCodeUnit unit : codeUnitsEncountered) {
             if (unit instanceof JavaType) {
-                return unit.getName() + "." + identifier.getText();
+                return unit.getName() + "/" + identifier.getText();
             }
         }
 

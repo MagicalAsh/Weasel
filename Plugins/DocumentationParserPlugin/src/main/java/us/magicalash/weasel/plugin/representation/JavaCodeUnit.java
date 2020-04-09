@@ -1,5 +1,6 @@
 package us.magicalash.weasel.plugin.representation;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
 
@@ -25,6 +26,12 @@ public class JavaCodeUnit {
      * A list of all language-level modifiers that apply to this code unit.
      */
     private List<String> modifiers;
+
+    @SerializedName("start_line")
+    private int startLine;
+
+    @SerializedName("end_line")
+    private int endLine;
 
     /**
      * A list of all annotations applied to this code unit. The key is the annotation name, the value is either a map
