@@ -1,8 +1,8 @@
-package us.magicalash.weasel.plugin;
+package us.magicalash.weasel.plugin.docparser;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
-import us.magicalash.weasel.plugin.docparser.JavaDocumentationParser;
+import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationParser;
 
 public class CommentIgnoringBailStrategy extends DefaultErrorStrategy implements ANTLRErrorStrategy {
 

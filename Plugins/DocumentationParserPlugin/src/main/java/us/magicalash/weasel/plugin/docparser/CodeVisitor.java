@@ -1,4 +1,4 @@
-package us.magicalash.weasel.plugin;
+package us.magicalash.weasel.plugin.docparser;
 
 import lombok.Getter;
 import org.antlr.v4.runtime.BailErrorStrategy;
@@ -8,12 +8,14 @@ import org.antlr.v4.runtime.ConsoleErrorListener;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import us.magicalash.weasel.plugin.docparser.*;
-import us.magicalash.weasel.plugin.docparser.JavaDocumentationParser.*;
-import us.magicalash.weasel.plugin.representation.*;
+import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationParserBaseVisitor;
+import us.magicalash.weasel.plugin.docparser.generated.JavadocLexer;
+import us.magicalash.weasel.plugin.docparser.generated.JavadocParser;
+import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationParser;
+import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationParser.*;
+import us.magicalash.weasel.plugin.docparser.representation.*;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit> {
     private static final int[] KEYWORD_MODIFIERS = {
@@ -126,6 +128,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         annotation.setName(getName(ctx.IDENTIFIER()));
 
         annotation.setType(ctx.AT().getText() + ctx.INTERFACE().getText());
+
+        annotation.setImplementsInterfaces(Collections.singletonList("java/lang/annotation/Annotation"));
+        annotation.setParentClass("java/lang/Object");
 
         types.add(annotation);
 
@@ -294,7 +299,11 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         constructor.setName("#constructor");
 
-        constructor.setReturnType(ctx.IDENTIFIER().getText());
+        String className = ctx.IDENTIFIER().getText();
+        constructor.setReturnType(imports.getOrDefault(className, className));
+
+        constructor.setStartLine(ctx.start.getLine());
+        constructor.setEndLine(ctx.stop.getLine());
 
         return manageParameters(constructor, ctx.formalParameters());
     }
@@ -392,11 +401,11 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         type.getImplementsInterfaces().addAll(getImplementedInterfaces(ctx.typeList()));
 
+        types.add(type);
+
         codeUnitsEncountered.push(type);
         visit(ctx.classBody());
         codeUnitsEncountered.pop();
-
-        types.add(type);
 
         return type;
     }
@@ -508,13 +517,13 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             type.getFields().add(enumValue);
         }
 
+        types.add(type);
+
         codeUnitsEncountered.push(type);
 
         visit(ctx.enumBodyDeclarations());
 
         codeUnitsEncountered.pop();
-
-        types.add(type);
 
         return type;
     }
@@ -629,10 +638,10 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
     private String getFullyQualifiedName(JavaDocumentationParser.QualifiedNameContext context) {
         if (context.IDENTIFIER().size() > 1) {
-            return context.getText();
+            return context.getText().replace('.', '/');
         } else {
             String name = context.IDENTIFIER(0).getText();
-            return imports.getOrDefault(name, name);
+            return imports.getOrDefault(name, name).replace('.', '/');
         }
     }
 
@@ -647,7 +656,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             if (typeContext.IDENTIFIER().size() > 1) { // this is already a qualified name, we need to reconstruct it
                 for (TerminalNode node : typeContext.IDENTIFIER()) {
                     name.append(node.getText());
-                    name.append('.');
+                    name.append('/');
                 }
                 name.setLength(name.length() - 1); //trim the last '.'
             } else { // there is only one identifier, so it's either not qualified or in the same package
@@ -687,7 +696,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         // find the most recent type, and add its name onto the end
         for (JavaCodeUnit unit : codeUnitsEncountered) {
             if (unit instanceof JavaType) {
-                return unit.getName() + "/" + identifier.getText();
+                String fullName = unit.getName() + "/" + identifier.getText();
+                imports.put(identifier.getText(), fullName);
+                return fullName;
             }
         }
 
@@ -714,7 +725,8 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         JavaCodeUnit unit = codeUnitsEncountered.peek();
         try {
-            unit.setDocumentation(new DocumentationVisitor().visit(parser.documentation()));
+            if (unit != null)
+                unit.setDocumentation(new DocumentationVisitor().visit(parser.documentation()));
         } catch (ParseCancellationException e) {
             // parsing failed. We should warn, but we don't have access to the loggers. Oh no!
         }

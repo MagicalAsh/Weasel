@@ -1,4 +1,4 @@
-package us.magicalash.weasel.plugin;
+package us.magicalash.weasel.plugin.nooppaarser;
 
 import com.google.gson.JsonObject;
 import us.magicalash.weasel.index.plugin.IndexPlugin;

@@ -15,6 +15,6 @@ public class Bar /** weird comment */ {
     /** weird extra comment */
     /** actual javadoc comment */
     public void foo() {
-        /** weird */
+        /** weird midmethod javadoc comment */
     }
 }

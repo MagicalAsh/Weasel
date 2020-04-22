@@ -25,5 +25,8 @@ public class Test1 {
 
     private <T> void baz2(Bar2<T> g) {
 
+
+
+
     }
 }

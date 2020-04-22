@@ -1,8 +1,7 @@
-package us.magicalash.weasel.plugin.representation;
+package us.magicalash.weasel.plugin.docparser.representation;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;

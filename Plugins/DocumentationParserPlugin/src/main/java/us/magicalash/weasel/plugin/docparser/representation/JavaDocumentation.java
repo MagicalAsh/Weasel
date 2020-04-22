@@ -1,4 +1,4 @@
-package us.magicalash.weasel.plugin.representation;
+package us.magicalash.weasel.plugin.docparser.representation;
 
 import lombok.Data;
 

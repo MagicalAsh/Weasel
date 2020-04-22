@@ -11,7 +11,7 @@ compilationUnit
     ;
 
 packageDeclaration
-    : annotation* PACKAGE qualifiedName SEMI
+    : documentation? annotation* PACKAGE qualifiedName SEMI
     ;
 
 importDeclaration

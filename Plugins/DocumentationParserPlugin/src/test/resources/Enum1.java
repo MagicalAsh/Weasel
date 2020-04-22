@@ -3,7 +3,7 @@ public enum Enum1 {
     B,
     C;
 
-    public void A() {
+    private void A() {
 
     }
 }

@@ -1,8 +1,9 @@
-package us.magicalash.weasel.plugin;
+package us.magicalash.weasel.plugin.fsprovider;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import us.magicalash.weasel.plugin.GlobMatcher;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 
 import java.io.File;
@@ -12,7 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static us.magicalash.weasel.plugin.FileSystemConstants.IGNORED_FILES;
+import static us.magicalash.weasel.plugin.fsprovider.FileSystemConstants.IGNORED_FILES;
 
 public class FileSystemProviderPlugin implements ProviderPlugin {
 

@@ -1,13 +1,13 @@
-package us.magicalash.weasel.plugin;
+package us.magicalash.weasel.plugin.docparser;
 
 import com.google.gson.*;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
-import us.magicalash.weasel.plugin.docparser.JavaDocumentationLexer;
-import us.magicalash.weasel.plugin.docparser.JavaDocumentationParser;
-import us.magicalash.weasel.plugin.representation.JavaType;
+import us.magicalash.weasel.plugin.docparser.representation.JavaType;
+import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationLexer;
+import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationParser;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -62,8 +62,7 @@ public class DocumentationParserPlugin implements IndexPlugin {
             listener.visit(parser.compilationUnit());
         } catch (ParseCancellationException e) {
             // parsing of this object failed
-            e.printStackTrace();
-            return;
+            throw new RuntimeException(e);
         }
 
         // todo parent/child relations might be a better idea here than normal direct indexing

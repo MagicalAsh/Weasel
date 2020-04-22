@@ -20,7 +20,7 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/file")
 public class FileController {
-    private final String CONTENT_LOCATION = "content_location";
+    private final String CONTENT_LOCATION = "file_location";
     private final String BRANCH = "branch_name";
 
     private final RestHighLevelClient client;
@@ -29,6 +29,7 @@ public class FileController {
         this.client = client;
     }
 
+    @CrossOrigin
     @PostMapping("/request")
     public FileRequestResponse getFullFile(@RequestBody JsonObject requestBody) {
         FileRequestResponse response = new FileRequestResponse();

@@ -1,4 +1,4 @@
-package us.magicalash.weasel.plugin;
+package us.magicalash.weasel.plugin.gitprovider;
 
 public class GitConstants {
     public static final String TEMP_DIR = "weasel.provider.plugin.git.temp_dir";

@@ -31,7 +31,6 @@ dependencies {
     antlr "org.antlr:antlr4:4.7.+" // use ANTLR version 4
     compile "org.antlr:antlr4-runtime:4.7.+" // use ANTLR version 4
 
-
     compileOnly 'org.projectlombok:lombok:1.18.8'
     annotationProcessor 'org.projectlombok:lombok:1.18.8'
 
@@ -40,8 +39,8 @@ dependencies {
 }
 
 generateGrammarSource {
-    arguments += ['-package', 'us.magicalash.weasel.plugin.docparser', "-visitor"]
-    outputDirectory = new File(buildDir.toString() + "/generated-src/antlr/main/us/magicalash/weasel/plugin/docparser")
+    arguments += ['-package', 'us.magicalash.weasel.plugin.docparser.generated', "-visitor"]
+    outputDirectory = new File(buildDir.toString() + "/generated-src/antlr/main/us/magicalash/weasel/plugin/docparser/generated")
 }
 
 // copy all of the dependencies into libs as well

@@ -8,8 +8,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import us.magicalash.weasel.plugin.GitConstants;
-import us.magicalash.weasel.plugin.GitProviderPlugin;
+import us.magicalash.weasel.plugin.gitprovider.GitConstants;
+import us.magicalash.weasel.plugin.gitprovider.GitProviderPlugin;
 
 import java.io.File;
 import java.io.IOException;

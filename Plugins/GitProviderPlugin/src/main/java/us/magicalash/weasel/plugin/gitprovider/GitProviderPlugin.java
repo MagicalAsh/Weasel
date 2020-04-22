@@ -1,4 +1,4 @@
-package us.magicalash.weasel.plugin;
+package us.magicalash.weasel.plugin.gitprovider;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -18,6 +18,7 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import us.magicalash.weasel.plugin.GlobMatcher;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 
 import java.io.File;

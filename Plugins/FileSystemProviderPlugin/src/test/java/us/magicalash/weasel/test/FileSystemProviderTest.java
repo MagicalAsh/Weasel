@@ -4,8 +4,8 @@ package us.magicalash.weasel.test;
 import com.google.gson.*;
 import org.junit.Before;
 import org.junit.Test;
-import us.magicalash.weasel.plugin.FileSystemConstants;
-import us.magicalash.weasel.plugin.FileSystemProviderPlugin;
+import us.magicalash.weasel.plugin.fsprovider.FileSystemConstants;
+import us.magicalash.weasel.plugin.fsprovider.FileSystemProviderPlugin;
 
 import java.util.ArrayList;
 import java.util.Properties;

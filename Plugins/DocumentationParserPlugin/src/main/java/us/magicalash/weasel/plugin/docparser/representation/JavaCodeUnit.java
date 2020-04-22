@@ -1,8 +1,7 @@
-package us.magicalash.weasel.plugin.representation;
+package us.magicalash.weasel.plugin.docparser.representation;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
-import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
 
 import java.util.*;
 
