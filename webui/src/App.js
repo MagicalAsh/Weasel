@@ -14,8 +14,8 @@ class App extends Component {
 }
 
 class ResultView extends Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this.state = {results: []};
 
         ResultView.instance = this;
@@ -84,12 +84,18 @@ class StructuralQueryBuilder extends Component {
     onClick = (e) => {
         let split = (s) => (s || "").split(/, */);
 
+        let namedFields = name => {
+            return {
+                "name": name
+            }
+        }
+
         let request = {
             "extends": split(this.state["Extends class(es):"] || ""),
             "interfaces": split(this.state["Interfaces:"] || ""),
             "modifiers": split(this.state["Modifiers:"] || ""),
-            "field_names": split(this.state["Field Name(s):"] || ""),
-            "method_names": split(this.state["Method Name(s):"] || "")
+            "fields": split(this.state["Field Name(s):"] || "").map(namedFields),
+            "methods": split(this.state["Method Name(s):"] || "").map(namedFields)
         };
 
         fetch("/search/structural/search", {
@@ -195,32 +201,33 @@ function loadFull(props) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                "content_location": props.repoName
+                "file_location": props.repoName
             })
         })
         .then(r => r.json())
         .then(obj => {
+            // console.log(obj);
             // todo fix this hack and make full source loading better
-            let fileMatch = {};
             let fileHit = {
                 matches: [],
                 line_start: 0,
-                line_end: obj.file.line_count
+                line_end: obj.file.parsed_result.length,
+                lines: obj.file.parsed_result
             };
-            let matches = [];
             for (let hit of props.hits) {
-                matches.push.apply(matches, hit.matches)
+                fileHit.matches.push.apply(fileHit.matches, hit.matches)
             }
 
-            fileHit.matches = matches;
+            let fileMatch = {
+                file_data: {
+                    file_location: props.repoName
+                },
+                repoName: props.repoName,
+                hit_contexts: [fileHit],
+            }
 
-            fileHit.lines = obj.file.file_contents;
-            obj.file.file_contents = undefined;
-            fileMatch.file_data = obj.file;
-            fileMatch.hit_contexts = [fileHit];
-
-
-            ResultView.instance.setState({results: [fileMatch] || []});
+            console.log(fileMatch);
+            ResultView.instance.setState({results: [fileMatch]});
         })
     }
 }

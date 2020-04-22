@@ -1,6 +1,7 @@
 package us.magicalash.weasel.search.web;
 
 import com.google.gson.*;
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -8,6 +9,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -138,12 +140,15 @@ public class StructuralSearchController {
         addListQueryToBuilder(builder, request, "modifiers", "parsed_result.modifiers");
 
         // these two get keyword since I apparently didn't specify them in the schema at all. Oops.
-        addListQueryToBuilder(builder, request, "field_names", "parsed_result.fields.name.keyword");
-        addListQueryToBuilder(builder, request, "method_names", "parsed_result.methods.name.keyword");
+        addNestedQueryToBuilder(builder, request, "fields", "parsed_result.fields");
+        addNestedQueryToBuilder(builder, request, "methods", "parsed_result.methods");
 
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
         sourceBuilder.query(builder)
                 .size(maxHits > 0? maxHits : 10);
+
+        System.out.println(request);
+        System.out.println(builder);
         return new SearchRequest().indices("parsed_java")
                 .source(sourceBuilder);
     }
@@ -167,11 +172,46 @@ public class StructuralSearchController {
         if (request.getAsJsonArray(elementName) != null) {
             // elasticsearch doesn't have a nice "match any of these", so we add each match to
             // the should clause. Elements with higher scores will float to the top, meaning
-            // that they should match as many as possible.
+            // that they should match as many as possible. Switching the query type to must
+            // requires that all match.
             for (JsonElement element : request.getAsJsonArray(elementName)) {
                 // don't include empty searches, in case they're inputted.
                 if (!element.getAsString().equals("")) {
-                    builder.should(QueryBuilders.matchQuery(dbName, element.getAsString()));
+                    // if the query type is "should", then match any. otherwise require all
+                    if (request.get("type") != null && request.get("type").getAsString().equals("should")) {
+                        builder.should(QueryBuilders.matchQuery(dbName, element.getAsString()));
+                    } else {
+                        builder.must(QueryBuilders.matchQuery(dbName, element.getAsString()));
+                    }
+                }
+            }
+        }
+    }
+
+    private void addNestedQueryToBuilder(BoolQueryBuilder builder, JsonObject request, String elementName, String dbNamePrefix) {
+
+        if (request.getAsJsonArray(elementName) != null) {
+            for (JsonElement object : request.getAsJsonArray(elementName)) {
+                BoolQueryBuilder innerQueryBuilder = QueryBuilders.boolQuery();
+                for (String key : object.getAsJsonObject().keySet()) {
+                    if (!object.getAsJsonObject().get(key).getAsString().equals("")) {
+                        MatchQueryBuilder queryBuilder = QueryBuilders.matchQuery(
+                                dbNamePrefix + "." + key + ".keyword",
+                                object.getAsJsonObject().get(key).getAsString()
+                        );
+
+                        if (request.get("type") != null && request.get("type").getAsString().equals("should")) {
+                            innerQueryBuilder.should(queryBuilder);
+                        } else {
+                            innerQueryBuilder.must(queryBuilder);
+                        }
+                    }
+                }
+
+                if (request.get("type") != null && request.get("type").getAsString().equals("should")) {
+                    builder.should(QueryBuilders.nestedQuery(dbNamePrefix, innerQueryBuilder, ScoreMode.Max));
+                } else {
+                    builder.must(QueryBuilders.nestedQuery(dbNamePrefix, innerQueryBuilder, ScoreMode.Max));
                 }
             }
         }
