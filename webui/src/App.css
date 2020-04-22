@@ -175,3 +175,27 @@
   color: #333333;
   width: 80%;
 }
+
+.error {
+  background-color: #FFC0CB;
+  border-radius: 100vh 100vh 100vh 100vh;
+  font-size: 24pt;
+  font-family: 'Inconsolata', monospace;
+  font-weight: lighter;
+  color: #333333;
+  width: 80%;
+  padding: 10px;
+  margin: 20px 10%;
+}
+
+.warning {
+  background-color: #FFFEC8;
+  border-radius: 100vh 100vh 100vh 100vh;
+  font-size: 24pt;
+  font-family: 'Inconsolata', monospace;
+  font-weight: lighter;
+  color: #333333;
+  width: 80%;
+  padding: 10px;
+  margin: 20px 10%;
+}

@@ -160,6 +160,9 @@ public class StructuralSearchController {
      * @param key    key to fix
      */
     private void fixQualifiedNames(JsonObject object, String key) {
+        if (object.get(key) == null) {
+            return;
+        }
         JsonArray array = new JsonArray();
         for (JsonElement element : object.remove(key).getAsJsonArray()) {
             array.add(element.getAsString().replaceAll("\\.", "/"));

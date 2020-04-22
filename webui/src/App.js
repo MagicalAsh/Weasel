@@ -16,16 +16,27 @@ class App extends Component {
 class ResultView extends Component {
     constructor(props) {
         super(props);
-        this.state = {results: []};
+        // we don't want results as an empty array here, to prevent
+        // the "no hits" message from appearing on first render.
+        this.state = {error: {}};
 
         ResultView.instance = this;
     }
 
-
     render = () => {
+        let error = <div />;
+
+        // if we have an error key, an error occurred
+        if (this.state.error !== undefined && Object.keys(this.state.error) > 0) {
+            error = <div className="error">Error: {this.state.error.message}</div>;
+        } else if (this.state.results !== undefined && this.state.results.length === 0) {
+            error = <div className="warning">There were no hits.</div>
+        }
+
         return (
             <div>
-                {this.state.results.map(i => (
+                {error}
+                {(this.state.results || []).map(i => (
                     <Result key={randomKey()} repoName={i.file_data.file_location} hits={i.hit_contexts}/>
                 ))}
             </div>
@@ -107,7 +118,11 @@ class StructuralQueryBuilder extends Component {
         })
             .then(r => r.json())
             .then(obj => {
-                ResultView.instance.setState({results: obj.hits || []})
+                if (obj.metadata.status >= 400) {
+                    ResultView.instance.setState({results: [], error: obj.metadata})
+                } else {
+                    ResultView.instance.setState({results: obj.hits || [], error: {}})
+                }
             });
 
         return false;
@@ -159,7 +174,7 @@ class RegexHeaderView extends Component {
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/json');
 
-        fetch("http://localhost:9099/search/regex/search", {
+        fetch("/search/regex/search", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -168,9 +183,16 @@ class RegexHeaderView extends Component {
                 "regex": this.state.regex_body
             })
         })
+            .catch((e) => {
+                console.log(e)
+            })
             .then(r => r.json())
             .then(obj => {
-                ResultView.instance.setState({results: obj.hits || []})
+                if (obj.metadata.status >= 400) {
+                    ResultView.instance.setState({results: [], error: obj.metadata})
+                } else {
+                    ResultView.instance.setState({results: obj.hits || [], error: {}})
+                }
             })
     };
 
@@ -206,6 +228,10 @@ function loadFull(props) {
         })
         .then(r => r.json())
         .then(obj => {
+            if (obj.metadata.status >= 400) {
+                ResultView.instance.setState({results: [], error: obj.metadata});
+            }
+
             // console.log(obj);
             // todo fix this hack and make full source loading better
             let fileHit = {
@@ -227,7 +253,7 @@ function loadFull(props) {
             }
 
             console.log(fileMatch);
-            ResultView.instance.setState({results: [fileMatch]});
+            ResultView.instance.setState({results: [fileMatch], error: {}});
         })
     }
 }
