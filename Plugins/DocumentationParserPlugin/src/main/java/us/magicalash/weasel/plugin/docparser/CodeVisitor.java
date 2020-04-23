@@ -110,6 +110,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         type.setType(ctx.INTERFACE().getText());
 
+        type.setStartLine(ctx.start.getLine());
+        type.setEndLine(ctx.stop.getLine());
+
         types.add(type);
 
         codeUnitsEncountered.push(type);
@@ -131,6 +134,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         annotation.setImplementsInterfaces(Collections.singletonList("java/lang/annotation/Annotation"));
         annotation.setParentClass("java/lang/Object");
+
+        annotation.setStartLine(ctx.start.getLine());
+        annotation.setEndLine(ctx.stop.getLine());
 
         types.add(annotation);
 
@@ -182,6 +188,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         method.setName(ctx.IDENTIFIER().getText());
 
+        method.setStartLine(ctx.start.getLine());
+        method.setEndLine(ctx.stop.getLine());
+
         return method;
     }
 
@@ -194,6 +203,8 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
             //todo make this handle 'Type name[]' type declarations
             variable.setName(context.variableDeclaratorId().IDENTIFIER().getText());
+            variable.setStartLine(context.start.getLine());
+            variable.setEndLine(context.stop.getLine());
 
             vars.add(variable);
         }
@@ -260,6 +271,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         JavaMethod method = new JavaMethod();
 
         method.setName(ctx.IDENTIFIER().getText());
+
+        method.setStartLine(ctx.start.getLine());
+        method.setEndLine(ctx.stop.getLine());
 
         codeUnitsEncountered.push(method);
 
@@ -355,6 +369,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         variable.setName(ctx.IDENTIFIER().getText());
 
+        variable.setStartLine(ctx.start.getLine());
+        variable.setEndLine(ctx.stop.getLine());
+
         return variable;
     }
 
@@ -400,6 +417,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         type.setParentClass(getTypeName(ctx.typeType()));
 
         type.getImplementsInterfaces().addAll(getImplementedInterfaces(ctx.typeList()));
+
+        type.setStartLine(ctx.start.getLine());
+        type.setEndLine(ctx.stop.getLine());
 
         types.add(type);
 
@@ -463,6 +483,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
                 variable.setType(getTypeName(parameterContext.typeType()));
                 variable.setName(parameterContext.variableDeclaratorId().IDENTIFIER().getText());
 
+                variable.setStartLine(parameterContext.start.getLine());
+                variable.setEndLine(parameterContext.stop.getLine());
+
                 codeUnitsEncountered.push(variable);
                 parameterContext.variableModifier().forEach(this::visit);
                 codeUnitsEncountered.pop();
@@ -475,6 +498,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
                 JavaVariable varArgVariable = new JavaVariable();
                 varArgVariable.setType(getTypeName(lastContext.typeType()) + "[]"); // varargs are treated as arrays
                 varArgVariable.setName(lastContext.variableDeclaratorId().IDENTIFIER().getText());
+
+                varArgVariable.setStartLine(ctx.start.getLine());
+                varArgVariable.setEndLine(ctx.stop.getLine());
 
                 codeUnitsEncountered.push(varArgVariable);
                 lastContext.variableModifier().forEach(this::visit);
@@ -494,6 +520,8 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         type.setType(ctx.ENUM().getText());
 
+        type.setStartLine(ctx.start.getLine());
+        type.setEndLine(ctx.stop.getLine());
 
         String enumName = getName(ctx.IDENTIFIER());
 
@@ -504,6 +532,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         for (EnumConstantContext constantContext : ctx.enumConstants().enumConstant()) {
             JavaVariable enumValue = new JavaVariable();
             enumValue.setType(enumName);
+
+            enumValue.setStartLine(ctx.start.getLine());
+            enumValue.setEndLine(ctx.stop.getLine());
 
             enumValue.setName(constantContext.IDENTIFIER().getText());
 

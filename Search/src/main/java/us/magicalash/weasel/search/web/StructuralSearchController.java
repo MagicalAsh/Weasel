@@ -121,7 +121,7 @@ public class StructuralSearchController {
                 .getAsJsonObject();
 
         List<String> lines = new ArrayList<>();
-        for (int i = start; i <= end; i++) {
+        for (int i = start; 0 < i && i <= end; i++) {
             lines.add(object.getAsJsonArray("parsed_result").get(i - 1).getAsString());
         }
 
