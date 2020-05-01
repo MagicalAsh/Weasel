@@ -22,7 +22,7 @@ public class WebPullController {
      * Web Refreshing enabled
      */
     @Setter
-    @Value("${weasel.provider.pull.enabled}")
+    @Value("#{${weasel.provider.pull.enabled}||false}")
     private boolean enabled;
 
     private final ProviderPluginLoader pluginLoader;

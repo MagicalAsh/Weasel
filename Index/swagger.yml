@@ -1,0 +1,140 @@
+swagger: "2.0"
+info:
+  description: "Weasel is a basic code search tool, created as a Western Carolina University Capstone Project by Wesley Rogers. Weasel is build in Java using the Spring framework, and uses Elasticsearch as a database. Using these, Weasel is able to search for structural components of code, such as \"classes extending java.lang.Exception with a field called parent.\" This allows for more complicated searches through code, which can uncover bugs in the searched application.\n\nThe Weasel Index Service indexes and parses code and inserts it into the database."
+  version: "1.0.0"
+  title: "Weasel Index Service"
+  # termsOfService: "http://swagger.io/terms/"
+  contact:
+    email: "wsrogers3@catamount.wcu"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "petstore.swagger.io"
+basePath: "/index"
+tags:
+  - name: "Index"
+    description: "Refreshing a repository via REST"
+schemes:
+  - "https"
+  - "http"
+paths:
+  /index:
+    post:
+      tags:
+        - "Index"
+      summary: "Parses and stores the provided code."
+      description: ""
+      operationId: "index"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "The repository to parse and store."
+          required: true
+          schema:
+            $ref: '#/definitions/ProvidedRepository'
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/IndexResponse"
+
+  /dry_run:
+    post:
+      tags:
+        - "Index"
+      summary: "Refresh a repo by name."
+      description: "Parses a repository and returns the parsed results."
+      operationId: "refreshByName"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "body"
+          in: "body"
+          description: "The repository to parse and return."
+          required: true
+          schema:
+            $ref: '#/definitions/ProvidedRepository'
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DryRunResponse"
+
+definitions:
+  DryRunResponse:
+    properties:
+      metadata:
+        $ref: '#/definitions/Metadata'
+      parsed_results:
+        type: array
+        items:
+          type: object
+          properties:
+            plugin_name:
+              type: string
+            result:
+              type: array
+              items:
+                type: object
+                properties:
+                  file_location:
+                    type: string
+                  indexed_by:
+                    type: string
+                  parsed_result:
+                    type: array
+                    items:
+                      type: object
+      processed_by:
+        type: array
+        items:
+          type: string
+
+  IndexResponse:
+    properties:
+      metadata:
+        $ref: '#/definitions/Metadata'
+      processed_by:
+        type: array
+        items:
+          type: string
+
+  Metadata:
+    properties:
+      path:
+        type: string
+      status:
+        type: integer
+      status_type:
+        type: string
+      timestamp:
+        type: string
+
+  ProvidedRepository:
+    type: object
+    properties:
+      accessed:
+        type: string
+      branch_name:
+        type: string
+      commit_id:
+        type: string
+      content_location:
+        type: string
+      file_contents:
+        type: array
+        items:
+          type: string
+      line_count:
+        type: integer
+      obtained_by:
+        type: string
+
+
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"

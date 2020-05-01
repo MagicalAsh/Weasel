@@ -1,5 +1,7 @@
 package us.magicalash.weasel.web;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,6 +24,8 @@ import java.time.Instant;
 @ControllerAdvice
 @RestControllerAdvice
 public class WebControllerAdvice extends ResponseEntityExceptionHandler implements ResponseBodyAdvice<Object> {
+    private static final Logger logger = LoggerFactory.getLogger(WebControllerAdvice.class);
+
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
         return true;
@@ -64,7 +68,7 @@ public class WebControllerAdvice extends ResponseEntityExceptionHandler implemen
         metadata.setTimestamp(Instant.now().toString());
 
         response.setStatus(500);
-        System.out.println("caught an error: " + e);
+        logger.warn("Caught an exception:", e);
 
         return ResponseEntity.status(500)
                              .body(responseBody);

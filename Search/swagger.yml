@@ -1,0 +1,212 @@
+swagger: "2.0"
+info:
+  description: "Weasel is a basic code search tool, created as a Western Carolina University Capstone Project by Wesley Rogers. Weasel is build in Java using the Spring framework, and uses Elasticsearch as a database. Using these, Weasel is able to search for structural components of code, such as \"classes extending java.lang.Exception with a field called parent.\" This allows for more complicated searches through code, which can uncover bugs in the searched application.\n\nThe Weasel Search Service provides a layer between the database and the user interface."
+  version: "1.0.0"
+  title: "Weasel Provider Service"
+  # termsOfService: "http://swagger.io/terms/"
+  contact:
+    email: "wsrogers3@catamount.wcu"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "petstore.swagger.io"
+basePath: "/provider"
+schemes:
+  - "https"
+  - "http"
+paths:
+  /file/request:
+    post:
+      tags:
+        - "File Request"
+      summary: "Requests a file to display."
+      description: ""
+      operationId: "file"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "File information about the file being fetched."
+          required: true
+          schema:
+            $ref: '#/definitions/FileRequest'
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/FileResponse"
+
+  /regex/search:
+    post:
+      tags:
+        - "Search"
+      summary: "Searches using a regular expression."
+      description: "Searches available code using line-by-line regular expression matching"
+      operationId: "regex"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "body"
+          in: "body"
+          description: "The regular expression to search using."
+          required: true
+          schema:
+            $ref: '#/definitions/RegexRequest'
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/RegexResponse"
+
+  /structural/search:
+    post:
+      tags:
+        - "Search"
+      summary: "Searches using structural information."
+      description: "Searches available code using provided stuctural information."
+      operationId: "struct"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "body"
+          in: "body"
+          description: "Structural information to search based on."
+          required: true
+          schema:
+            $ref: '#/definitions/StructuralRequest'
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/StructuralResponse"
+
+definitions:
+
+  Metadata:
+    properties:
+      path:
+        type: string
+      status:
+        type: integer
+      status_type:
+        type: string
+      timestamp:
+        type: string
+
+  StructuralRequest:
+    properties:
+      max_hits:
+        type: integer
+      extends:
+        type: array
+        items:
+          type: string
+      interfaces:
+        type: array
+        items:
+          type: string
+      modifiers:
+        type: array
+        items:
+          type: string
+      fields:
+        type: array
+      methods:
+        type: array
+
+  RegexRequest:
+    properties:
+      regex:
+        type: string
+      match_context:
+        type: integer
+      max_hits:
+        type: integer
+
+  FileRequest:
+    properties:
+      file_location:
+        type: string
+      branch_name:
+        type: string
+
+  StructuralResponse:
+    properties:
+      hit_count:
+        type: integer
+      hits:
+        type: array
+        items:
+          $ref: '#/definitions/FileHit'
+      metadata:
+        $ref: '#/definitions/Metadata'
+      took:
+        type: integer
+
+
+  FileHit:
+    properties:
+      file_data:
+        type: object
+        properties:
+          file_location:
+            type: string
+      hit_contexts:
+        type: array
+        items:
+          type: object
+          properties:
+            line_end:
+              type: integer
+            line_start:
+              type: integer
+            lines:
+              type: array
+              items:
+                type: string
+            matches:
+              type: array
+              items:
+                type: integer
+
+  RegexResponse:
+    properties:
+      hit_count:
+        type: integer
+      hits:
+        type: array
+        items:
+          $ref: '#/definitions/FileHit'
+      metadata:
+        $ref: '#/definitions/Metadata'
+      regex:
+        type: string
+      took:
+        type: integer
+
+  FileResponse:
+    properties:
+      file:
+        type: object
+        properties:
+          file_location:
+            type: string
+          indexed_by:
+            type: string
+          parsed_result:
+            type: array
+            items:
+              type: string
+      hit_count:
+        type: integer
+      metadata:
+        $ref: '#/definitions/Metadata'
+      took:
+        type: integer
+
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
