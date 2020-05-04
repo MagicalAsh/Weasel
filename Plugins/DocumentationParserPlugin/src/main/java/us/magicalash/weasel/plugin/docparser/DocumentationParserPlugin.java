@@ -76,7 +76,7 @@ public class DocumentationParserPlugin implements IndexPlugin {
             if (obj.get("metadata") != null){
                 JsonObject metadata = obj.get("metadata").getAsJsonObject();
                 Map<String, String> map = new HashMap<>();
-                for(String key : obj.keySet()) {
+                for(String key : metadata.keySet()) {
                     map.put(key, metadata.get(key).getAsString());
                 }
                 unit.setMetadata(map);
