@@ -1,5 +1,7 @@
 package us.magicalash.weasel.provider;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.junit.Before;
 import org.springframework.web.client.RestTemplate;
 import us.magicalash.weasel.plugin.PluginTaskService;
@@ -21,7 +23,8 @@ public class ProviderWebControllerTests {
         RestTemplate template = mock(RestTemplate.class);
         PluginTaskService taskService = mock(PluginTaskService.class);
         SendingProperties properties = new SendingProperties();
-        controller = new WebRefreshController(providerPluginLoader, template, properties, taskService);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        controller = new WebRefreshController(providerPluginLoader, template, properties, taskService, gson);
         controller.setEnabled(true);
 
         // we don't want this returning null, so give it a mock

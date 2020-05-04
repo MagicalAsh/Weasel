@@ -1,7 +1,9 @@
 package us.magicalash.weasel.provider.plugin.representations;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Map;
@@ -22,4 +24,13 @@ public class ProvidedFile {
 
     @SerializedName("file_contents")
     private List<String> lines;
+
+    @SerializedName("line_count")
+    @Setter(AccessLevel.NONE) // This should only be set by setLines
+    private int lineCount;
+
+    public void setLines(List<String> lines) {
+        this.lines = lines;
+        this.lineCount = lines.size();
+    }
 }

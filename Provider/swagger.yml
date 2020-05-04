@@ -9,7 +9,6 @@ info:
   license:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
-host: "petstore.swagger.io"
 basePath: "/provider"
 tags:
   - name: "Web Refresh"
@@ -173,8 +172,3 @@ definitions:
               type: integer
             obtained_by:
               type: string
-
-
-externalDocs:
-  description: "Find out more about Swagger"
-  url: "http://swagger.io"

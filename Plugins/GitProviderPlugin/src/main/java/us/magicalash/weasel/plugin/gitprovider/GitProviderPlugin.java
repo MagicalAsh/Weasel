@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import us.magicalash.weasel.plugin.GlobMatcher;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
+import us.magicalash.weasel.provider.plugin.representations.ProvidedFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,7 +75,7 @@ public class GitProviderPlugin implements ProviderPlugin {
     }
 
     @Override
-    public void refresh(String name, Consumer<JsonElement> onProduce) {
+    public void refresh(String name, Consumer<ProvidedFile> onProduce) {
         try {
             Repository repo = getRepo(name);
             List<Ref> call = new Git(repo).branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
@@ -90,7 +91,7 @@ public class GitProviderPlugin implements ProviderPlugin {
         }
     }
 
-    private void traverseBranch(String branchName, Repository repository, Consumer<JsonElement> onProduce) throws IOException, GitAPIException {
+    private void traverseBranch(String branchName, Repository repository, Consumer<ProvidedFile> onProduce) throws IOException, GitAPIException {
         if (globMatcher.isBlacklisted(branchName)) { // ignore blacklist branches
             if (!globMatcher.isWhitelisted(branchName)) { // don't ignore whitelisted ones though
                 return;
@@ -110,8 +111,8 @@ public class GitProviderPlugin implements ProviderPlugin {
             walk.setRecursive(true);
             walk.addTree(tree);
             while (walk.next()) {
-                JsonObject fileData = new JsonObject();
-                JsonArray lines = new JsonArray();
+                ProvidedFile fileData = new ProvidedFile();
+                List<String> lines = new ArrayList<>();
 
                 ObjectLoader loader = repository.open(walk.getObjectId(0));
                 Scanner fileReader = new Scanner(loader.openStream());
@@ -120,13 +121,16 @@ public class GitProviderPlugin implements ProviderPlugin {
                 }
                 fileReader.close();
 
-                fileData.add("file_contents", lines);
-                fileData.addProperty("content_location", walk.getPathString());
-                fileData.addProperty("accessed", getTimestamp());
-                fileData.addProperty("obtained_by", getName());
-                fileData.addProperty("branch_name", branchName);
-                fileData.addProperty("line_count", lines.size());
-                fileData.addProperty("commit_id", walk.getObjectId(0).name());
+                fileData.setLines(lines);
+                fileData.setFileLocation(walk.getPathString());
+                fileData.setAccessedAt(getTimestamp());
+                fileData.setObtainedBy(getName());
+
+                Map<String, String> gitData = new HashMap<>(2);
+                gitData.put("branch_name", branchName);
+                gitData.put("commit_id", walk.getObjectId(0).name());
+
+                fileData.setMetadata(gitData);
                 // todo add information about the file, like when commited etc
                 onProduce.accept(fileData);
             }

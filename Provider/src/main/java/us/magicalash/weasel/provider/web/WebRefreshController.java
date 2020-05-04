@@ -1,5 +1,6 @@
 package us.magicalash.weasel.provider.web;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,13 +32,15 @@ public class WebRefreshController {
     private final RestTemplate template;
     private final SendingProperties sendingProperties;
     private final PluginTaskService taskService;
+    private final Gson gson;
 
     public WebRefreshController(ProviderPluginLoader pluginLoader, RestTemplate template,
-                                SendingProperties sendingProperties, PluginTaskService taskService) {
+                                SendingProperties sendingProperties, PluginTaskService taskService, Gson gson) {
         this.pluginLoader = pluginLoader;
         this.template = template;
         this.sendingProperties = sendingProperties;
         this.taskService = taskService;
+        this.gson = gson;
     }
 
     @GetMapping("/refresh/{repoName}")
@@ -58,7 +61,7 @@ public class WebRefreshController {
                 PluginTask.builder()
                     .pluginName(plugin.getName())
                     .task(() -> {
-                        plugin.refresh(repoName, e -> send(e.toString()));
+                        plugin.refresh(repoName, e -> send(gson.toJson(e)));
                         return null;
                     })
                     .build()

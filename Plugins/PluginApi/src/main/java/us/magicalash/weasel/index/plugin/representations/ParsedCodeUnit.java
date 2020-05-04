@@ -35,6 +35,10 @@ public class ParsedCodeUnit {
     @SerializedName("parsed_result")
     private Object parsedObject;
 
+    /**
+     * Additional metadata about this code unit, or the file it was
+     * created from.
+     */
     @SerializedName("metadata")
     private Map<String, String> metadata;
 }

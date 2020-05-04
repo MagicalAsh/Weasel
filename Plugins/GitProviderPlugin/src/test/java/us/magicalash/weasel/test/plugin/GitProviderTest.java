@@ -10,11 +10,13 @@ import org.junit.Ignore;
 import org.junit.Test;
 import us.magicalash.weasel.plugin.gitprovider.GitConstants;
 import us.magicalash.weasel.plugin.gitprovider.GitProviderPlugin;
+import us.magicalash.weasel.provider.plugin.representations.ProvidedFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertTrue;
@@ -56,7 +58,7 @@ public class GitProviderTest {
             throw new RuntimeException("Something went wrong setting git up for testLoadLocalRepo()", e);
         }
 
-        JsonArray arr = this.provider.refresh(fileName);
+        List<ProvidedFile> arr = this.provider.refresh(fileName);
 
         assertTrue(arr.size() > 0);
 
@@ -65,7 +67,7 @@ public class GitProviderTest {
 
     @Test
     public void testLoadHttpRepo() {
-        JsonArray arr = this.provider.refresh("https://github.com/MagicalAsh/discrete-biostatistics-project.git");
+        List<ProvidedFile> arr = this.provider.refresh("https://github.com/MagicalAsh/discrete-biostatistics-project.git");
 
         assertTrue(arr.size() > 0);
 
@@ -75,7 +77,7 @@ public class GitProviderTest {
     @Ignore("Requires ssh key set up, which may not be set up.")
     @Test
     public void testLoadSshRepo() {
-        JsonArray arr = this.provider.refresh("git@github.com:MagicalAsh/Weasel.git");
+        List<ProvidedFile> arr = this.provider.refresh("git@github.com:MagicalAsh/Weasel.git");
 
         assertTrue(arr.size() > 0);
 

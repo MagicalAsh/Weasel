@@ -3,7 +3,10 @@ package us.magicalash.weasel.provider.plugin;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import us.magicalash.weasel.plugin.WeaselPlugin;
+import us.magicalash.weasel.provider.plugin.representations.ProvidedFile;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public interface ProviderPlugin extends WeaselPlugin {
@@ -23,8 +26,8 @@ public interface ProviderPlugin extends WeaselPlugin {
      * @return a json array representing the resources, where each entry is a
      * single portion of the repo, usually a file.
      */
-    default JsonArray refresh(String name) {
-        JsonArray array = new JsonArray();
+    default List<ProvidedFile> refresh(String name) {
+        ArrayList<ProvidedFile> array = new ArrayList<>();
         refresh(name, array::add);
         return array;
     };
@@ -34,5 +37,5 @@ public interface ProviderPlugin extends WeaselPlugin {
      * @param name                  the name of the resource to refresh
      * @param onElementCompleted    the action to take on every produced resource
      */
-    void refresh(String name, Consumer<JsonElement> onElementCompleted);
+    void refresh(String name, Consumer<ProvidedFile> onElementCompleted);
 }

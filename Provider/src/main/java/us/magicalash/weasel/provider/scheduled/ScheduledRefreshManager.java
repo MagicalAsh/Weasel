@@ -11,8 +11,10 @@ import org.springframework.web.client.RestTemplate;
 import us.magicalash.weasel.provider.configuration.SendingProperties;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 import us.magicalash.weasel.provider.plugin.ProviderPluginLoader;
+import us.magicalash.weasel.provider.plugin.representations.ProvidedFile;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,12 +47,12 @@ public class ScheduledRefreshManager {
 
         for (String repository : schedulingProperties.getRepositories()) {
             for (ProviderPlugin plugin : loader.getApplicablePlugins(repository)) {
-                JsonElement repo = plugin.refresh(repository);
+                List<ProvidedFile> repo = plugin.refresh(repository);
 
                 Map<String, String> queryParams = new LinkedHashMap<>();
                 queryParams.put("provider", plugin.getName());
 
-                for (JsonElement component : repo.getAsJsonArray()) {
+                for (ProvidedFile component : repo) {
                     ResponseEntity<JsonObject> response =
                             template.postForEntity(properties.getAddress(), component, JsonObject.class, queryParams);
 

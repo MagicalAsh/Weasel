@@ -9,8 +9,7 @@ info:
   license:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
-host: "petstore.swagger.io"
-basePath: "/provider"
+basePath: "/search"
 schemes:
   - "https"
   - "http"
@@ -114,8 +113,12 @@ definitions:
           type: string
       fields:
         type: array
+        items:
+          type: object
       methods:
         type: array
+        items:
+          type: object
 
   RegexRequest:
     properties:
@@ -206,7 +209,3 @@ definitions:
         $ref: '#/definitions/Metadata'
       took:
         type: integer
-
-externalDocs:
-  description: "Find out more about Swagger"
-  url: "http://swagger.io"

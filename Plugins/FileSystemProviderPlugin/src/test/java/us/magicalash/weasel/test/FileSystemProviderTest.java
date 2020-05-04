@@ -6,8 +6,10 @@ import org.junit.Before;
 import org.junit.Test;
 import us.magicalash.weasel.plugin.fsprovider.FileSystemConstants;
 import us.magicalash.weasel.plugin.fsprovider.FileSystemProviderPlugin;
+import us.magicalash.weasel.provider.plugin.representations.ProvidedFile;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertFalse;
@@ -34,7 +36,7 @@ public class FileSystemProviderTest {
 
     @Test
     public void testRefresh() {
-        JsonArray testing = plugin.refresh("file://" + System.getProperty("user.dir") + "/src/");
+        List<ProvidedFile> testing = plugin.refresh("file://" + System.getProperty("user.dir") + "/src/");
         System.out.println(gson.toJson(testing));
         assertTrue(testing.size() > 0);
     }
@@ -47,14 +49,11 @@ public class FileSystemProviderTest {
         p.put(FileSystemConstants.IGNORED_FILES, ignored);
         plugin.load(p);
 
-        JsonArray array = plugin.refresh("./");
-        for (JsonElement j : array) {
-            if (j instanceof JsonObject) {
-                JsonObject file = (JsonObject) j;
-                String location = file.get("content_location").getAsString();
-                assertFalse(location.endsWith(".java"));
-                System.out.println(gson.toJson(j));
-            }
+        List<ProvidedFile> array = plugin.refresh("./");
+        for (ProvidedFile file : array) {
+            String location = file.getFileLocation();
+            assertFalse(location.endsWith(".java"));
+            System.out.println(gson.toJson(file));
         }
     }
 }

@@ -1,10 +1,8 @@
 package us.magicalash.weasel.plugin.fsprovider;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import us.magicalash.weasel.plugin.GlobMatcher;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
+import us.magicalash.weasel.provider.plugin.representations.ProvidedFile;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,13 +48,13 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
     }
 
     @Override
-    public void refresh(String name, Consumer<JsonElement> onProduce) {
+    public void refresh(String name, Consumer<ProvidedFile> onProduce) {
         File root = new File(name.replace("file://", ""));
 
         recursiveSearch(onProduce, root);
     }
 
-    private void recursiveSearch(Consumer<JsonElement> onFileGen, File root){
+    private void recursiveSearch(Consumer<ProvidedFile> onFileGen, File root){
         // return early if this is ignored.
         if (matcher.isBlacklisted(root.getName())) {
             return;
@@ -72,9 +70,9 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
         return;
     }
 
-    private JsonObject parseFile(File file) {
-        JsonObject fileData = new JsonObject();
-        JsonArray lines = new JsonArray();
+    private ProvidedFile parseFile(File file) {
+        ProvidedFile out = new ProvidedFile();
+        ArrayList<String> lines = new ArrayList<>();
 
         try (Scanner fileReader = new Scanner(file)) {
             while (fileReader.hasNext()) {
@@ -85,13 +83,12 @@ public class FileSystemProviderPlugin implements ProviderPlugin {
             // is going on, but we can probably just ignore it.
         }
 
-        fileData.add("file_contents", lines);
-        fileData.addProperty("content_location", file.getAbsolutePath());
-        fileData.addProperty("accessed", getTimestamp());
-        fileData.addProperty("obtained_by", getName());
-        fileData.addProperty("line_count", lines.size());
+        out.setFileLocation(file.getAbsolutePath());
+        out.setAccessedAt(getTimestamp());
+        out.setLines(lines);
+        out.setObtainedBy(getName());
 
-        return fileData;
+        return out;
     }
 
     private String getTimestamp() {

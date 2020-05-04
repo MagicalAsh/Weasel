@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import us.magicalash.weasel.provider.plugin.ProviderPlugin;
 import us.magicalash.weasel.provider.plugin.ProviderPluginLoader;
+import us.magicalash.weasel.provider.plugin.representations.ProvidedFile;
 import us.magicalash.weasel.provider.representation.ProvidedRepository;
 import us.magicalash.weasel.provider.representation.ProviderResponse;
 import us.magicalash.weasel.provider.representation.PullResponse;
@@ -45,7 +46,7 @@ public class WebPullController {
         List<ProvidedRepository> pluginResponses = new ArrayList<>();
         for (ProviderPlugin plugin : plugins) {
             ProvidedRepository repo = new ProvidedRepository();
-            JsonArray output = plugin.refresh(repoName);
+            List<ProvidedFile> output = plugin.refresh(repoName);
 
             repo.setProvided(output);
             repo.setProvidedBy(plugin.getName());
