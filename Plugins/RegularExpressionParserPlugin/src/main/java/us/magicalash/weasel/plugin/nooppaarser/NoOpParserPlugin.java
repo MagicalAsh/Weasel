@@ -41,9 +41,10 @@ public class NoOpParserPlugin implements IndexPlugin {
             unit.setLocation(obj.get("content_location").getAsString());
 
         if (obj.get("metadata") != null){
+            JsonObject metadata = obj.get("metadata").getAsJsonObject();
             Map<String, String> map = new HashMap<>();
-            for(String key : obj.keySet()) {
-                map.put(key, obj.get(key).getAsString());
+            for(String key : metadata.keySet()) {
+                map.put(key, metadata.get(key).getAsString());
             }
             unit.setMetadata(map);
         }
