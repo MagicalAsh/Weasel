@@ -1,8 +1,5 @@
 package us.magicalash.weasel.plugin.gitprovider;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.LsRemoteCommand;
@@ -13,6 +10,7 @@ import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
@@ -102,37 +100,48 @@ public class GitProviderPlugin implements ProviderPlugin {
         // checkout the branch so we can traverse it
         git.checkout().setName(branchName).setForced(true).call();
 
+        // keep track of what files we've visited so far, so we don't visit files at
+        // various parts of their lifecycle.
+        HashSet<String> fileName = new HashSet<>();
+
         // oh my god who designed this api?
         ObjectId lastCommitId = repository.resolve(Constants.HEAD);
         try (RevWalk revWalk = new RevWalk(repository)) {
+            // newest to oldest
+            revWalk.sort(RevSort.COMMIT_TIME_DESC);
             RevCommit commit = revWalk.parseCommit(lastCommitId);
             RevTree tree = commit.getTree();
             TreeWalk walk = new TreeWalk(repository);
             walk.setRecursive(true);
             walk.addTree(tree);
             while (walk.next()) {
-                ProvidedFile fileData = new ProvidedFile();
-                List<String> lines = new ArrayList<>();
+                // if we haven't visited here before, provide it
+                if (!fileName.contains(walk.getPathString())) {
+                    fileName.add(walk.getPathString());
 
-                ObjectLoader loader = repository.open(walk.getObjectId(0));
-                Scanner fileReader = new Scanner(loader.openStream());
-                while (fileReader.hasNext()) {
-                    lines.add(fileReader.nextLine());
+                    ProvidedFile fileData = new ProvidedFile();
+                    List<String> lines = new ArrayList<>();
+
+                    ObjectLoader loader = repository.open(walk.getObjectId(0));
+                    Scanner fileReader = new Scanner(loader.openStream());
+                    while (fileReader.hasNext()) {
+                        lines.add(fileReader.nextLine());
+                    }
+                    fileReader.close();
+
+                    fileData.setLines(lines);
+                    fileData.setFileLocation(walk.getPathString());
+                    fileData.setAccessedAt(getTimestamp());
+                    fileData.setObtainedBy(getName());
+
+                    Map<String, String> gitData = new HashMap<>(2);
+                    gitData.put("branch_name", branchName);
+                    gitData.put("commit_id", walk.getObjectId(0).name());
+
+                    fileData.setMetadata(gitData);
+                    // todo add information about the file, like when commited etc
+                    onProduce.accept(fileData);
                 }
-                fileReader.close();
-
-                fileData.setLines(lines);
-                fileData.setFileLocation(walk.getPathString());
-                fileData.setAccessedAt(getTimestamp());
-                fileData.setObtainedBy(getName());
-
-                Map<String, String> gitData = new HashMap<>(2);
-                gitData.put("branch_name", branchName);
-                gitData.put("commit_id", walk.getObjectId(0).name());
-
-                fileData.setMetadata(gitData);
-                // todo add information about the file, like when commited etc
-                onProduce.accept(fileData);
             }
         }
     }

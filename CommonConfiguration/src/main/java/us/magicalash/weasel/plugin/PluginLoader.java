@@ -9,6 +9,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 /**
  * Loads plugins from a directory that conform to the Weasel Plugin interface.
@@ -27,6 +30,16 @@ public abstract class PluginLoader<T extends WeaselPlugin> {
     private static final String DEFAULT_PLUGIN_FOLDER = "plugins/";
 
     private ServiceLoader<T> loader;
+    private Class<T> clazz;
+    private boolean hasLoaded;
+
+    /**
+     * Setting special requests before calling loadPlugin() allows you to request special actions
+     * when a specific property is found, such as obtaining a Spring Bean or requesting information
+     * from the database. The key is a regular expression matching the requested key, while the
+     * value is a function taking the plugin and matching key, and returning the specified object.
+     */
+    protected Map<String, BiFunction<T, String, Object>> specialRequestProperties;
 
     private List<T> loadedPlugins;
     private Environment environment;
@@ -38,10 +51,18 @@ public abstract class PluginLoader<T extends WeaselPlugin> {
      * @param environment   the environment to pull configuration options from
      */
     public PluginLoader(Class<T> clazz, Environment environment) {
+        this.specialRequestProperties = new HashMap<>();
+        this.clazz = clazz;
+        this.hasLoaded = false;
+        this.environment = environment;
+    }
+
+    public void loadPlugins() {
         String pluginFolder = environment.getProperty(PLUGIN_FOLDER_PROPERTY);
         if (pluginFolder == null) {
             pluginFolder = DEFAULT_PLUGIN_FOLDER;
         }
+
 
         URLClassLoader classLoader = null;
         File folder = new File(pluginFolder);
@@ -62,26 +83,33 @@ public abstract class PluginLoader<T extends WeaselPlugin> {
         }
 
         loader = ServiceLoader.load(clazz, classLoader);
-
-        this.environment = environment;
-        loadPlugins();
+        loadProperties();
     }
 
     /**
      * Loads the configurations for all of the plugins that
      * the service loader found.
      */
-    private void loadPlugins() {
+    private void loadProperties() {
         this.loadedPlugins = new ArrayList<>();
         for (T plugin : loader) {
             Properties properties = new Properties();
             for (String property : plugin.requestProperties()) {
                 // copy properties from spring into a properties object, because Spring can't.
                 Object value = null;
-                if (property.endsWith("[*]")) {
-                    value = toList(property.replace("[*]", ""));
-                } else {
-                    value = environment.getProperty(property);
+
+                for (String pattern : specialRequestProperties.keySet()) {
+                    if (Pattern.matches(pattern, property)){
+                        value = specialRequestProperties.get(pattern).apply(plugin, property);
+                    }
+                }
+
+                if (value == null) {
+                    if (property.endsWith("[*]")) {
+                        value = toList(property.replace("[*]", ""));
+                    } else {
+                        value = environment.getProperty(property);
+                    }
                 }
 
                 properties.put(property, value == null ? "" : value);
@@ -92,6 +120,7 @@ public abstract class PluginLoader<T extends WeaselPlugin> {
         }
 
         logger.info("Loaded {} plugins.", loadedPlugins.size());
+        hasLoaded = true;
     }
 
     /**
@@ -125,6 +154,10 @@ public abstract class PluginLoader<T extends WeaselPlugin> {
      * @return the currently loaded plugins, as an unmodified list.
      */
     public List<T> getLoadedPlugins() {
+        if (!hasLoaded) {
+            loadPlugins();
+        }
+
         return Collections.unmodifiableList(this.loadedPlugins);
     }
 
