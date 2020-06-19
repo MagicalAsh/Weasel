@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
+import us.magicalash.weasel.plugin.PackageHierarchy;
 import us.magicalash.weasel.plugin.docparser.representation.JavaType;
 import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationLexer;
 import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationParser;
@@ -15,6 +16,8 @@ import java.util.Properties;
 import java.util.function.Consumer;
 
 public class DocumentationParserPlugin implements IndexPlugin {
+    private PackageHierarchy hierarchy;
+
     @Override
     public String getName() {
         return "Java Documentation Parser";
@@ -22,11 +25,14 @@ public class DocumentationParserPlugin implements IndexPlugin {
 
     @Override
     public String[] requestProperties() {
-        return new String[0];
+        return new String[]{
+                "hierarchy(parsed_java):name"
+        };
     }
 
     @Override
     public void load(Properties properties) {
+        this.hierarchy = (PackageHierarchy) properties.get("hierarchy(parsed_java):name");
     }
 
     @Override
@@ -57,11 +63,16 @@ public class DocumentationParserPlugin implements IndexPlugin {
         parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
 
-        CodeVisitor listener = new CodeVisitor();
+        CodeVisitor listener = new CodeVisitor(hierarchy);
         try {
             listener.visit(parser.compilationUnit());
         } catch (ParseCancellationException e) {
             // parsing of this object failed
+            String fileName = obj.get("content_location").getAsString();
+            if (fileName.endsWith("package-info.java") || fileName.endsWith("module-info.java"))
+                return; // these files don't contain any useful information other than dependencies and exports
+
+            System.out.println("Failed parsing object at: " + obj.get("content_location").getAsString());
             throw new RuntimeException(e);
         }
 

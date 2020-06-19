@@ -15,7 +15,7 @@ packageDeclaration
     ;
 
 importDeclaration
-    : IMPORT STATIC? qualifiedName (DOT MUL)? SEMI
+    : documentation? IMPORT STATIC? qualifiedName (DOT MUL)? SEMI
     ;
 
 typeDeclaration
@@ -96,6 +96,8 @@ interfaceBody
     : LBRACE interfaceBodyDeclaration* RBRACE
     ;
 
+// it's possible for the last element of a class body to be a doc comment.
+// it's not particularly useful, but it's not disallowed.
 classBodyDeclaration
     : SEMI
     | STATIC? block
@@ -153,6 +155,7 @@ fieldDeclaration
 
 interfaceBodyDeclaration
     : documentation? modifier* interfaceMemberDeclaration
+    | documentation
     | SEMI
     ;
 
@@ -305,6 +308,7 @@ annotationTypeBody
 
 annotationTypeElementDeclaration
     : documentation? modifier* annotationTypeElementRest
+    | documentation
     | SEMI // this is not allowed by the grammar, but apparently allowed by the actual compiler
     ;
 
@@ -355,10 +359,15 @@ localTypeDeclaration
     | SEMI
     ;
 
+// while documentation is not a statement, I can't figure out how to
+// get rid of them. Assigning them to a different channel appears to
+// make them impossible to get within a visitor. So now I need to add
+// them in places where it would change the parse path should the token
+// appear. Ugh.
 statement
     : blockLabel=block
     | ASSERT expression (COLON expression)? SEMI
-    | IF parExpression statement (ELSE statement)?
+    | IF parExpression statement (documentation? ELSE statement)?
     | FOR LPAREN forControl RPAREN statement
     | WHILE parExpression statement
     | DO statement WHILE parExpression SEMI
@@ -373,10 +382,11 @@ statement
     | SEMI
     | statementExpression=expression SEMI
     | identifierLabel=IDENTIFIER COLON statement
+    | documentation
     ;
 
 catchClause
-    : CATCH LPAREN variableModifier* catchType IDENTIFIER RPAREN block
+    : documentation? CATCH LPAREN variableModifier* catchType IDENTIFIER RPAREN block
     ;
 
 catchType
@@ -384,7 +394,7 @@ catchType
     ;
 
 finallyBlock
-    : FINALLY block
+    : documentation? FINALLY block
     ;
 
 resourceSpecification
@@ -395,8 +405,13 @@ resources
     : resource (SEMI resource)*
     ;
 
+
+// In Java 9(?) try with resources added the ability to try based on
+// existing resources, meaning that we need to add the ability to match
+// just an identifier
 resource
     : variableModifier* classOrInterfaceType variableDeclaratorId ASSIGN expression
+    | IDENTIFIER
     ;
 
 /** Matches cases then statements, both of which are mandatory.
@@ -454,7 +469,7 @@ expression
     | expression LBRACK expression RBRACK
     | methodCall
     | NEW creator
-    | LPAREN typeType RPAREN expression
+    | LPAREN typeType (BITAND typeType)* RPAREN expression
     | expression postfix=(INC | DEC)
     | prefix=(ADD | SUB | INC | DEC) expression
     | prefix=(TILDE | BANG) expression

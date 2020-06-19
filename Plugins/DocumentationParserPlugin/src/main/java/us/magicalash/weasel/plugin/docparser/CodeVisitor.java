@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.ConsoleErrorListener;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import us.magicalash.weasel.plugin.PackageHierarchy;
 import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationParserBaseVisitor;
 import us.magicalash.weasel.plugin.docparser.generated.JavadocLexer;
 import us.magicalash.weasel.plugin.docparser.generated.JavadocParser;
@@ -26,6 +27,8 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
     };
 
     private String packageName;
+    private List<String> starImports;
+    private PackageHierarchy hierarchy;
     private Map<String, String> imports;
 
     private Deque<JavaCodeUnit> codeUnitsEncountered;
@@ -36,14 +39,16 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
     @Getter
     private List<JavaType> types;
 
-    public CodeVisitor() {
+    public CodeVisitor(PackageHierarchy hierarchy) {
         super();
 
         // Most files I've ever interacted with have only one top level class file,
         // so the overhead of growing is better than wasted space
         types = Collections.synchronizedList(new ArrayList<>(1));
+        this.hierarchy = hierarchy;
         codeUnitsEncountered = new ArrayDeque<>();
         packageName = "";
+        starImports = new ArrayList<>();
         imports = new HashMap<>();
     }
 
@@ -314,7 +319,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         constructor.setName("#constructor");
 
         String className = ctx.IDENTIFIER().getText();
-        constructor.setReturnType(imports.getOrDefault(className, className));
+        constructor.setReturnType(resolveName(className));
 
         constructor.setStartLine(ctx.start.getLine());
         constructor.setEndLine(ctx.stop.getLine());
@@ -568,6 +573,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         // as subobjects, and causes elasticsearch to generate a LOT of mappings for only
         // a few names. It's also an issue when parsing imports.
         packageName = ctx.qualifiedName().getText().replaceAll("\\.", "/");
+        this.starImports.add(packageName); // being in the same package acts like a star import
         return super.visitPackageDeclaration(ctx);
     }
 
@@ -582,10 +588,8 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         if (ctx.MUL() == null) { // if its not a star import
             imports.put(className, fqn);
         } else {
-            // todo: figure out how to warn if this happens, because certain until then we won't
-            //  know where non-qualified names come from
-            System.out.println("Star imports are not supported, names imported under " +
-                    "a star import will not be searchable using their qualified name.");
+            // it is a star import
+            starImports.add(className);
         }
 
         return super.visitImportDeclaration(ctx);
@@ -643,9 +647,6 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         Map<String, Map<String, String>> annotations = codeUnitsEncountered.peek().getAnnotations();
 
         String name = getFullyQualifiedName(context.qualifiedName());
-        if (imports.containsKey(name)) {
-            name = imports.get(name); // resolve imported name to fully qualified class name
-        }
 
         //todo future: determine if parsing annotations passed to annotations is worth the effort or not
         // the answer is probably yes, but I'd like to see some use for it first
@@ -672,8 +673,22 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             return context.getText().replace('.', '/');
         } else {
             String name = context.IDENTIFIER(0).getText();
-            return imports.getOrDefault(name, name).replace('.', '/');
+            return resolveName(name);
         }
+    }
+
+    private String resolveName(String name) {
+        if (imports.containsKey(name)) {
+            name = imports.get(name);
+        } else {
+            for (String prefix : starImports) {
+                if (hierarchy.containsType(prefix + "/" + name)) {
+                    name = prefix + "/" + name;
+                    break; // this is gross but we don't need to continue
+                }
+            }
+        }
+        return name.replace('.', '/');
     }
 
     private String getTypeName(TypeTypeContext context) {
@@ -691,10 +706,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
                 }
                 name.setLength(name.length() - 1); //trim the last '.'
             } else { // there is only one identifier, so it's either not qualified or in the same package
-                String tempName = typeContext.IDENTIFIER(0).getText();
-                if (imports.containsKey(tempName)) { // it's an imported name, so we resolve it
-                    tempName = imports.get(tempName);
-                }
+                String tempName = resolveName(typeContext.IDENTIFIER(0).getText());
 
                 name.append(tempName);
             }
@@ -729,6 +741,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             if (unit instanceof JavaType) {
                 String fullName = unit.getName() + "/" + identifier.getText();
                 imports.put(identifier.getText(), fullName);
+                hierarchy.addType(fullName);
                 return fullName;
             }
         }
@@ -756,7 +769,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         JavaCodeUnit unit = codeUnitsEncountered.peek();
         try {
-            if (unit != null)
+            if (unit != null && unit.getDocumentation() == null)
                 unit.setDocumentation(new DocumentationVisitor().visit(parser.documentation()));
         } catch (ParseCancellationException e) {
             // parsing failed. We should warn, but we don't have access to the loggers. Oh no!

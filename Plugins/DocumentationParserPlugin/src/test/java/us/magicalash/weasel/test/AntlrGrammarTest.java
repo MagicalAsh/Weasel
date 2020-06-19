@@ -2,8 +2,10 @@ package us.magicalash.weasel.test;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import org.junit.Before;
 import org.junit.Test;
 import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
+import us.magicalash.weasel.plugin.PackageHierarchy;
 import us.magicalash.weasel.plugin.docparser.DocumentationParserPlugin;
 import us.magicalash.weasel.plugin.docparser.representation.JavaMethod;
 import us.magicalash.weasel.plugin.docparser.representation.JavaType;
@@ -12,13 +14,23 @@ import us.magicalash.weasel.plugin.docparser.representation.JavaVariable;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Scanner;
 
 import static org.junit.Assert.*;
 
 public class AntlrGrammarTest {
-    private DocumentationParserPlugin pl = new DocumentationParserPlugin();
+    private DocumentationParserPlugin pl;
 
+    @Before
+    public void setup() {
+        this.pl = new DocumentationParserPlugin();
+        PackageHierarchy hierarchy = new PackageHierarchy();
+        Properties properties = new Properties();
+        properties.put("hierarchy(parsed_java):name", hierarchy);
+
+        pl.load(properties);
+    }
 
     @Test
     public void testAnnotationType() {

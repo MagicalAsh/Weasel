@@ -102,6 +102,11 @@ public class PackageHierarchy {
         return children;
     }
 
+    /**
+     * Gets all children packages and types of the given name.
+     * @param name the subpackage or type to get children of
+     * @return     all children subpackages or types
+     */
     public Set<String> getAllChildren(String name) {
         PackageHierarchy subpackage = traverseTo(name);
 

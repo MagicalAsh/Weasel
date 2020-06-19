@@ -26,6 +26,7 @@ import us.magicalash.weasel.plugin.PluginLoader;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -39,9 +40,10 @@ public class IndexPluginLoader extends PluginLoader<IndexPlugin> {
     @Value("${weasel.plugin.failOnSpecialRequestException:false}")
     private boolean failOnHierarchyException;
 
-    @Value("${weasel.plugin.scrollKeepalive:\"10m\"}")
+    @Value("${weasel.plugin.scrollKeepalive:10m}")
     private String scrollLength;
 
+    @Autowired
     private RestHighLevelClient client;
 
     @Autowired
@@ -71,7 +73,7 @@ public class IndexPluginLoader extends PluginLoader<IndexPlugin> {
 
         PackageHierarchy hierarchy = new PackageHierarchy();
         try {
-            SearchRequest request = matchAll(index);
+            SearchRequest request = matchAll(index, fieldName);
             SearchResponse searchResponse = client.search(request, RequestOptions.DEFAULT);
 
             String scrollId = searchResponse.getScrollId();
@@ -100,17 +102,26 @@ public class IndexPluginLoader extends PluginLoader<IndexPlugin> {
         return hierarchy;
     }
 
-    private SearchRequest matchAll(String index) {
+    private SearchRequest matchAll(String index, String fieldName) {
         SearchSourceBuilder builder = new SearchSourceBuilder();
         builder.query(QueryBuilders.matchAllQuery())
-               .fetchSource("parsed_result.name", null)
-               .size(0);
+               .fetchSource("parsed_result." + fieldName, null)
+               .size(1000);
         return new SearchRequest().indices(index).source(builder).scroll(scrollLength);
     }
 
+    @SuppressWarnings("unsafe")
     private void processHits(PackageHierarchy hierarchy, String fieldName, SearchHit[] searchHits){
         for (SearchHit hit : searchHits) {
-            hierarchy.addType(hit.getFields().get("parsed_result." + fieldName).getValue());
+            Map<String, Object> object = hit.getSourceAsMap();
+            object = (Map<String, Object>) object.get("parsed_result");
+            Object field = object.get(fieldName);
+
+            if (field == null) {
+                System.out.println("object doesn't have field");
+                return;
+            }
+            hierarchy.addType(field.toString());
         }
     }
 }

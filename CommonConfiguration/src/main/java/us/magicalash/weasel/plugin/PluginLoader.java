@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -57,6 +58,7 @@ public abstract class PluginLoader<T extends WeaselPlugin> {
         this.environment = environment;
     }
 
+    @PostConstruct
     public void loadPlugins() {
         String pluginFolder = environment.getProperty(PLUGIN_FOLDER_PROPERTY);
         if (pluginFolder == null) {
@@ -99,6 +101,7 @@ public abstract class PluginLoader<T extends WeaselPlugin> {
                 Object value = null;
 
                 for (String pattern : specialRequestProperties.keySet()) {
+                    System.out.printf("%s matched %s\n", property, pattern);
                     if (Pattern.matches(pattern, property)){
                         value = specialRequestProperties.get(pattern).apply(plugin, property);
                     }
