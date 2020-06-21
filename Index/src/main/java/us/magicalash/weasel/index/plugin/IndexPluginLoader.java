@@ -68,6 +68,10 @@ public class IndexPluginLoader extends PluginLoader<IndexPlugin> {
         Pattern pattern = Pattern.compile(HIERARCHY_REGEX);
         Matcher matcher = pattern.matcher(propertyName);
 
+        if (!matcher.matches()) {
+            throw new RuntimeException("Regular Expression Matches but no groups match. This should not happen.");
+        }
+
         String index = matcher.group(1);
         String fieldName = matcher.group(2);
 
@@ -110,7 +114,7 @@ public class IndexPluginLoader extends PluginLoader<IndexPlugin> {
         return new SearchRequest().indices(index).source(builder).scroll(scrollLength);
     }
 
-    @SuppressWarnings("unsafe")
+    @SuppressWarnings("unchecked")
     private void processHits(PackageHierarchy hierarchy, String fieldName, SearchHit[] searchHits){
         for (SearchHit hit : searchHits) {
             Map<String, Object> object = hit.getSourceAsMap();
