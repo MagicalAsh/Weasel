@@ -3,6 +3,8 @@ package us.magicalash.weasel.plugin.docparser;
 import com.google.gson.*;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.magicalash.weasel.index.plugin.IndexPlugin;
 import us.magicalash.weasel.index.plugin.representations.ParsedCodeUnit;
 import us.magicalash.weasel.plugin.PackageHierarchy;
@@ -16,6 +18,8 @@ import java.util.Properties;
 import java.util.function.Consumer;
 
 public class DocumentationParserPlugin implements IndexPlugin {
+    private static Logger logger = LoggerFactory.getLogger(DocumentationParserPlugin.class);
+
     private PackageHierarchy hierarchy;
 
     @Override
@@ -72,7 +76,7 @@ public class DocumentationParserPlugin implements IndexPlugin {
             if (fileName.endsWith("package-info.java") || fileName.endsWith("module-info.java"))
                 return; // these files don't contain any useful information other than dependencies and exports
 
-            System.out.println("Failed parsing object at: " + obj.get("content_location").getAsString());
+            logger.warn("Failed parsing object at: " + obj.get("content_location").getAsString());
             throw new RuntimeException(e);
         }
 

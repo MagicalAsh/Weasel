@@ -27,6 +27,7 @@ dependencies {
     compileOnly project(':Plugins:PluginApi')
 
     compileOnly 'com.google.code.gson:gson:2.8.5'
+    compileOnly 'org.slf4j:slf4j-api:1.7.25'
 
     antlr "org.antlr:antlr4:4.7.+" // use ANTLR version 4
     compile "org.antlr:antlr4-runtime:4.7.+" // use ANTLR version 4

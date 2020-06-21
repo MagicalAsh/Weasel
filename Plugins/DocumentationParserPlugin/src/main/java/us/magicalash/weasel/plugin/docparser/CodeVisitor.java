@@ -8,6 +8,8 @@ import org.antlr.v4.runtime.ConsoleErrorListener;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.magicalash.weasel.plugin.PackageHierarchy;
 import us.magicalash.weasel.plugin.docparser.generated.JavaDocumentationParserBaseVisitor;
 import us.magicalash.weasel.plugin.docparser.generated.JavadocLexer;
@@ -19,6 +21,8 @@ import us.magicalash.weasel.plugin.docparser.representation.*;
 import java.util.*;
 
 public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit> {
+    private static Logger logger = LoggerFactory.getLogger(CodeVisitor.class);
+
     private static final int[] KEYWORD_MODIFIERS = {
             JavaDocumentationParser.ABSTRACT, JavaDocumentationParser.FINAL, JavaDocumentationParser.STATIC,
             JavaDocumentationParser.STRICTFP, JavaDocumentationParser.PUBLIC, JavaDocumentationParser.PROTECTED,
@@ -671,6 +675,8 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
     private String getFullyQualifiedName(JavaDocumentationParser.QualifiedNameContext context) {
         if (context.IDENTIFIER().size() > 1) {
+            StringBuilder name = new StringBuilder();
+            resolveQualifiedName(name, context.IDENTIFIER());
             return context.getText().replace('.', '/');
         } else {
             String name = context.IDENTIFIER(0).getText();
@@ -678,18 +684,35 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         }
     }
 
+    private void resolveQualifiedName(StringBuilder name, List<TerminalNode> identifiers) {
+        name.append(resolveName(identifiers.get(0).getText()));
+        for (int i = 1; i < identifiers.size(); i++) {
+            name.append('/');
+            name.append(identifiers.get(i).getText());
+        }
+    }
+
     private String resolveName(String name) {
+        String qualifiedName = name;
         if (imports.containsKey(name)) {
-            name = imports.get(name);
+            qualifiedName = imports.get(name);
         } else {
             for (String prefix : starImports) {
                 if (hierarchy.containsType(prefix + "/" + name)) {
-                    name = prefix + "/" + name;
+                    qualifiedName = prefix + "/" + name;
                     break; // this is gross but we don't need to continue
                 }
             }
         }
-        return name.replace('.', '/');
+
+        qualifiedName = qualifiedName.replace('.', '/');
+
+        logger.trace("Resolved '{}' to '{}'", name, qualifiedName);
+        if (!qualifiedName.contains("/")) {
+            logger.debug("Unable to resolve '{}' to a qualified name. This result with not be " +
+                         "searchable using the qualified type name.", qualifiedName);
+        }
+        return qualifiedName;
     }
 
     private String getTypeName(TypeTypeContext context) {
@@ -703,12 +726,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             // Resolve this name into a qualified name. We always need to resolve the first name
             // (since a qualified name could be an inner class of an imported name). After that,
             // everything can be assumed to be a qualified name.
-            List<TerminalNode> identifiers = typeContext.IDENTIFIER();
-            name.append(resolveName(identifiers.get(0).getText()));
-            for (int i = 1; i < identifiers.size(); i++) {
-                name.append('/');
-                name.append(identifiers.get(i).getText());
-            }
+            resolveQualifiedName(name, typeContext.IDENTIFIER());
         } else if (context.primitiveType() != null) { // its a primitive type
             PrimitiveTypeContext typeContext = context.primitiveType();
             name.append(typeContext.getChild(0).getText());
@@ -716,6 +734,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         context.LBRACK().forEach(e -> name.append("[]"));
 
+        logger.trace("Resolved Type '{}' to '{}'", context.getText(), name);
         return name.toString();
     }
 
@@ -771,7 +790,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             if (unit != null && unit.getDocumentation() == null)
                 unit.setDocumentation(new DocumentationVisitor().visit(parser.documentation()));
         } catch (ParseCancellationException e) {
-            // parsing failed. We should warn, but we don't have access to the loggers. Oh no!
+            logger.debug("Parsing of documentation failed.", e);
         }
 
         return null;
