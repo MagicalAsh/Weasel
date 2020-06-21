@@ -1,10 +1,8 @@
 package us.magicalash.weasel.plugin;
 
-import lombok.Getter;
-
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * The PackageHierarchy class is used to represent package structures like those in Java and Go, where types
@@ -35,7 +33,7 @@ public class PackageHierarchy {
     private String name;
 
     public PackageHierarchy() {
-        this.hierarchyMap = new HashMap<>();
+        this.hierarchyMap = new ConcurrentHashMap<>();
         this.isType = false;
         this.parent = null;
     }
