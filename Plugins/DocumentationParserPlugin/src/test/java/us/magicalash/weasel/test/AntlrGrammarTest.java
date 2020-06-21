@@ -1,5 +1,7 @@
 package us.magicalash.weasel.test;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.junit.Before;
@@ -21,6 +23,7 @@ import static org.junit.Assert.*;
 
 public class AntlrGrammarTest {
     private DocumentationParserPlugin pl;
+    private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @Before
     public void setup() {
@@ -292,6 +295,20 @@ public class AntlrGrammarTest {
         assertTrue(true);
     }
 
+    @Test
+    public void testInnerClassNameResolves() {
+        List<ParsedCodeUnit> codeUnits = parseFile("InnerClassUsed.java");
+
+        assertEquals(1, codeUnits.size());
+        assertTrue(codeUnits.get(0).getParsedObject() instanceof JavaType);
+
+        JavaType type = (JavaType) codeUnits.get(0).getParsedObject();
+        assertEquals(1, type.getFields().size());
+
+        JavaVariable field = type.getFields().get(0);
+        assertEquals(field.getType(), "foo/Thread/State");
+    }
+
     private void assertAnnotations(Map<String, Map<String, String>> annotations, String... names) {
         assertEquals(names.length, annotations.size());
         for (String name : names) {
@@ -323,6 +340,10 @@ public class AntlrGrammarTest {
 
         obj.add("file_contents", array);
 
-        return pl.index(obj);
+        List<ParsedCodeUnit> result = pl.index(obj);
+
+        System.out.println(gson.toJson(result));
+
+        return result;
     }
 }

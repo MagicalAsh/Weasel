@@ -574,6 +574,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         // a few names. It's also an issue when parsing imports.
         packageName = ctx.qualifiedName().getText().replaceAll("\\.", "/");
         this.starImports.add(packageName); // being in the same package acts like a star import
+        this.starImports.add("java/lang"); // java.lang does not need to be imported either
         return super.visitPackageDeclaration(ctx);
     }
 
@@ -699,16 +700,14 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         StringBuilder name = new StringBuilder();
         if (context.classOrInterfaceType() != null) {
             ClassOrInterfaceTypeContext typeContext = context.classOrInterfaceType();
-            if (typeContext.IDENTIFIER().size() > 1) { // this is already a qualified name, we need to reconstruct it
-                for (TerminalNode node : typeContext.IDENTIFIER()) {
-                    name.append(node.getText());
-                    name.append('/');
-                }
-                name.setLength(name.length() - 1); //trim the last '.'
-            } else { // there is only one identifier, so it's either not qualified or in the same package
-                String tempName = resolveName(typeContext.IDENTIFIER(0).getText());
-
-                name.append(tempName);
+            // Resolve this name into a qualified name. We always need to resolve the first name
+            // (since a qualified name could be an inner class of an imported name). After that,
+            // everything can be assumed to be a qualified name.
+            List<TerminalNode> identifiers = typeContext.IDENTIFIER();
+            name.append(resolveName(identifiers.get(0).getText()));
+            for (int i = 1; i < identifiers.size(); i++) {
+                name.append('/');
+                name.append(identifiers.get(i).getText());
             }
         } else if (context.primitiveType() != null) { // its a primitive type
             PrimitiveTypeContext typeContext = context.primitiveType();
