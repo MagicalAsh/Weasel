@@ -33,6 +33,7 @@ public class DocumentationParserPlugin implements IndexPlugin {
     private ExecutorService threadPool;
 
     private DependencyManager dependencyManager;
+    private Thread dependencyManagerThread;
 
     @Override
     public String getName() {
@@ -55,7 +56,9 @@ public class DocumentationParserPlugin implements IndexPlugin {
         this.dependencyManager = new DependencyManager(this.threadPool, this::runCodeVisitor);
         this.hierarchy.addTypeAddListener(this.dependencyManager::addType);
 
-        new Thread(dependencyManager).start();
+        this.dependencyManagerThread = new Thread(dependencyManager);
+        this.dependencyManagerThread.setName("Documentation Parser Plugin Dependency Manager");
+        this.dependencyManagerThread.start();
     }
 
     @Override

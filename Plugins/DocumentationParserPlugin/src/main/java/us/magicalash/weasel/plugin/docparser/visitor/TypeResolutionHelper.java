@@ -119,6 +119,36 @@ public class TypeResolutionHelper {
         return name.toString();
     }
 
+    public String getTypeNameWithoutResolving(JavaDocumentationParser.TypeTypeContext context) {
+        if (context == null) {
+            return "java/lang/Object";
+        }
+
+        StringBuilder name = new StringBuilder();
+        if (context.classOrInterfaceType() != null) {
+            JavaDocumentationParser.ClassOrInterfaceTypeContext typeContext = context.classOrInterfaceType();
+            // Resolve this name into a qualified name. We always need to resolve the first name
+            // (since a qualified name could be an inner class of an imported name). After that,
+            // everything can be assumed to be a qualified name.
+            List<TerminalNode> identifiers = typeContext.IDENTIFIER();
+            String prefix = identifiers.get(0).getText();
+
+            name.append(prefix);
+
+            for (int i = 1; i < identifiers.size(); i++) {
+                name.append('/');
+                name.append(identifiers.get(i).getText());
+            }
+        } else if (context.primitiveType() != null) { // its a primitive type
+            JavaDocumentationParser.PrimitiveTypeContext typeContext = context.primitiveType();
+            name.append(typeContext.getChild(0).getText());
+        }
+
+        context.LBRACK().forEach(e -> name.append("[]"));
+
+        return name.toString();
+    }
+
     public boolean canResolve(UnresolvedDependency dependency) {
         if (this.resolveName(dependency.getName()) != null) {
             return true;

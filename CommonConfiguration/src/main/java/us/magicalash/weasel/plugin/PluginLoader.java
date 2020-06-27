@@ -101,7 +101,6 @@ public abstract class PluginLoader<T extends WeaselPlugin> {
                 Object value = null;
 
                 for (String pattern : specialRequestProperties.keySet()) {
-                    System.out.printf("%s matched %s\n", property, pattern);
                     if (Pattern.matches(pattern, property)){
                         value = specialRequestProperties.get(pattern).apply(plugin, property);
                     }

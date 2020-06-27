@@ -31,4 +31,5 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.8'
 
     testImplementation "junit:junit:4.12"
+    testRuntime "org.slf4j:slf4j-simple:1.6.1"
 }
