@@ -1,4 +1,4 @@
-package us.magicalash.weasel.plugin.docparser;
+package us.magicalash.weasel.plugin.docparser.visitor;
 
 import lombok.Getter;
 import org.antlr.v4.runtime.BailErrorStrategy;
@@ -31,17 +31,15 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
     };
 
     private String packageName;
-    private List<String> starImports;
-    private PackageHierarchy hierarchy;
-    private Map<String, String> imports;
+    private final TypeResolutionHelper typeHelper;
 
-    private Deque<JavaCodeUnit> codeUnitsEncountered;
+    private final Deque<JavaCodeUnit> codeUnitsEncountered;
 
     /**
      * A list of all types encountered so far
      */
     @Getter
-    private List<JavaType> types;
+    private final List<JavaType> types;
 
     public CodeVisitor(PackageHierarchy hierarchy) {
         super();
@@ -49,11 +47,9 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         // Most files I've ever interacted with have only one top level class file,
         // so the overhead of growing is better than wasted space
         types = Collections.synchronizedList(new ArrayList<>(1));
-        this.hierarchy = hierarchy;
+        typeHelper = new TypeResolutionHelper(hierarchy);
         codeUnitsEncountered = new ArrayDeque<>();
         packageName = "";
-        starImports = new ArrayList<>();
-        imports = new HashMap<>();
     }
 
     @Override
@@ -163,12 +159,12 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             if (unit instanceof DummyContainer) {
                 for (JavaCodeUnit inner : ((DummyContainer) unit).getDummyContainer()){
                     JavaVariable constant = (JavaVariable) inner;
-                    constant.setType(getTypeName(ctx.typeType()));
+                    constant.setType(typeHelper.getTypeName(ctx.typeType()));
                     parent.getFields().add(constant);
                 }
             } else { //its a method
                 JavaMethod method = (JavaMethod) unit;
-                method.setReturnType(getTypeName(ctx.typeType()));
+                method.setReturnType(typeHelper.getTypeName(ctx.typeType()));
                 parent.getMethods().add(method);
             }
 
@@ -291,7 +287,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         // get the method return type instead of just visiting it
         if (ctx.typeTypeOrVoid().typeType() != null)
-            method.setReturnType(getTypeName(ctx.typeTypeOrVoid().typeType()));
+            method.setReturnType(typeHelper.getTypeName(ctx.typeTypeOrVoid().typeType()));
         else
             method.setReturnType(ctx.typeTypeOrVoid().VOID().getText());
 
@@ -323,7 +319,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         constructor.setName("#constructor");
 
         String className = ctx.IDENTIFIER().getText();
-        constructor.setReturnType(resolveName(className));
+        constructor.setReturnType(typeHelper.resolveName(className));
 
         constructor.setStartLine(ctx.start.getLine());
         constructor.setEndLine(ctx.stop.getLine());
@@ -356,7 +352,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         for (ConstantDeclaratorContext context : ctx.constantDeclarator()) {
             JavaVariable variable = (JavaVariable) visit(context);
 
-            variable.setType(getTypeName(ctx.typeType()));
+            variable.setType(typeHelper.getTypeName(ctx.typeType()));
 
             enclosingType.getFields().add(variable);
 
@@ -392,7 +388,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         for (VariableDeclaratorContext context : ctx.variableDeclarators().variableDeclarator()) {
             JavaVariable variable = new JavaVariable();
 
-            variable.setType(getTypeName(ctx.typeType()));
+            variable.setType(typeHelper.getTypeName(ctx.typeType()));
 
             //todo make this handle 'Type name[]' type declarations
             variable.setName(context.variableDeclaratorId().IDENTIFIER().getText());
@@ -423,7 +419,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
 
         type.setName(getName(ctx.IDENTIFIER()));
 
-        type.setParentClass(getTypeName(ctx.typeType()));
+        type.setParentClass(typeHelper.getTypeName(ctx.typeType()));
 
         type.getImplementsInterfaces().addAll(getImplementedInterfaces(ctx.typeList()));
 
@@ -469,7 +465,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         if (retTypeContext.VOID() != null) {
             method.setReturnType(retTypeContext.VOID().getText());
         } else {
-            method.setReturnType(getTypeName(retTypeContext.typeType()));
+            method.setReturnType(typeHelper.getTypeName(retTypeContext.typeType()));
         }
 
         method.setStartLine(ctx.start.getLine());
@@ -489,7 +485,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         if (parameterListContext != null) {
             for (FormalParameterContext parameterContext : parameterListContext.formalParameter()) {
                 JavaVariable variable = new JavaVariable();
-                variable.setType(getTypeName(parameterContext.typeType()));
+                variable.setType(typeHelper.getTypeName(parameterContext.typeType()));
                 variable.setName(parameterContext.variableDeclaratorId().IDENTIFIER().getText());
 
                 variable.setStartLine(parameterContext.start.getLine());
@@ -505,7 +501,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
             if (parameterListContext.lastFormalParameter() != null) {
                 LastFormalParameterContext lastContext = parameterListContext.lastFormalParameter();
                 JavaVariable varArgVariable = new JavaVariable();
-                varArgVariable.setType(getTypeName(lastContext.typeType()) + "[]"); // varargs are treated as arrays
+                varArgVariable.setType(typeHelper.getTypeName(lastContext.typeType()) + "[]"); // varargs are treated as arrays
                 varArgVariable.setName(lastContext.variableDeclaratorId().IDENTIFIER().getText());
 
                 varArgVariable.setStartLine(ctx.start.getLine());
@@ -577,8 +573,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         // as subobjects, and causes elasticsearch to generate a LOT of mappings for only
         // a few names. It's also an issue when parsing imports.
         packageName = ctx.qualifiedName().getText().replaceAll("\\.", "/");
-        this.starImports.add(packageName); // being in the same package acts like a star import
-        this.starImports.add("java/lang"); // java.lang does not need to be imported either
+        this.typeHelper.addStarImport(packageName); // being in the same package acts like a star import
         return super.visitPackageDeclaration(ctx);
     }
 
@@ -587,14 +582,18 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         // see the above comment explaining why '.' is replaced with '/'.
         JavaDocumentationParser.QualifiedNameContext fqnContext = ctx.qualifiedName();
         String fqn = fqnContext.getText().replaceAll("\\.", "/");
-        int totalIdentifiers = fqnContext.IDENTIFIER().size();
-        String className = fqnContext.IDENTIFIER(totalIdentifiers - 1).getText();
+        fqn = fqn.replace(".*", "");
+
+        // we don't care about static imports, they're constants not types.
+        if (ctx.STATIC() != null) {
+            return super.visitImportDeclaration(ctx);
+        }
 
         if (ctx.MUL() == null) { // if its not a star import
-            imports.put(className, fqn);
+            typeHelper.addImport(fqn);
         } else {
             // it is a star import
-            starImports.add(className);
+            typeHelper.addStarImport(fqn);
         }
 
         return super.visitImportDeclaration(ctx);
@@ -651,7 +650,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
     public JavaCodeUnit visitAnnotation(AnnotationContext context) {
         Map<String, Map<String, String>> annotations = codeUnitsEncountered.peek().getAnnotations();
 
-        String name = getFullyQualifiedName(context.qualifiedName());
+        String name = resolveQualifiedName(context.qualifiedName().IDENTIFIER());
 
         //todo future: determine if parsing annotations passed to annotations is worth the effort or not
         // the answer is probably yes, but I'd like to see some use for it first
@@ -673,68 +672,19 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         return null;
     }
 
-    private String getFullyQualifiedName(JavaDocumentationParser.QualifiedNameContext context) {
-        if (context.IDENTIFIER().size() > 1) {
-            StringBuilder name = new StringBuilder();
-            resolveQualifiedName(name, context.IDENTIFIER());
-            return context.getText().replace('.', '/');
+    private String resolveQualifiedName(List<TerminalNode> identifiers) {
+        StringBuilder name = new StringBuilder();
+        String prefix = typeHelper.resolveName(identifiers.get(0).getText());
+        if (prefix != null) {
+            name.append(prefix);
         } else {
-            String name = context.IDENTIFIER(0).getText();
-            return resolveName(name);
+            name.append(identifiers.get(0).getText());
         }
-    }
-
-    private void resolveQualifiedName(StringBuilder name, List<TerminalNode> identifiers) {
-        name.append(resolveName(identifiers.get(0).getText()));
         for (int i = 1; i < identifiers.size(); i++) {
             name.append('/');
             name.append(identifiers.get(i).getText());
         }
-    }
 
-    private String resolveName(String name) {
-        String qualifiedName = name;
-        if (imports.containsKey(name)) {
-            qualifiedName = imports.get(name);
-        } else {
-            for (String prefix : starImports) {
-                if (hierarchy.containsType(prefix + "/" + name)) {
-                    qualifiedName = prefix + "/" + name;
-                    break; // this is gross but we don't need to continue
-                }
-            }
-        }
-
-        qualifiedName = qualifiedName.replace('.', '/');
-
-        logger.trace("Resolved '{}' to '{}'", name, qualifiedName);
-        if (!qualifiedName.contains("/")) {
-            logger.debug("Unable to resolve '{}' to a qualified name. This result with not be " +
-                         "searchable using the qualified type name.", qualifiedName);
-        }
-        return qualifiedName;
-    }
-
-    private String getTypeName(TypeTypeContext context) {
-        if (context == null) {
-            return "java/lang/Object";
-        }
-
-        StringBuilder name = new StringBuilder();
-        if (context.classOrInterfaceType() != null) {
-            ClassOrInterfaceTypeContext typeContext = context.classOrInterfaceType();
-            // Resolve this name into a qualified name. We always need to resolve the first name
-            // (since a qualified name could be an inner class of an imported name). After that,
-            // everything can be assumed to be a qualified name.
-            resolveQualifiedName(name, typeContext.IDENTIFIER());
-        } else if (context.primitiveType() != null) { // its a primitive type
-            PrimitiveTypeContext typeContext = context.primitiveType();
-            name.append(typeContext.getChild(0).getText());
-        }
-
-        context.LBRACK().forEach(e -> name.append("[]"));
-
-        logger.trace("Resolved Type '{}' to '{}'", context.getText(), name);
         return name.toString();
     }
 
@@ -747,7 +697,7 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         List<String> impls = new ArrayList<>(1);
 
         for (TypeTypeContext typeContext : context.typeType()){
-            impls.add(getTypeName(typeContext));
+            impls.add(typeHelper.getTypeName(typeContext));
         }
 
         return impls;
@@ -758,8 +708,6 @@ public class CodeVisitor extends JavaDocumentationParserBaseVisitor<JavaCodeUnit
         for (JavaCodeUnit unit : codeUnitsEncountered) {
             if (unit instanceof JavaType) {
                 String fullName = unit.getName() + "/" + identifier.getText();
-                imports.put(identifier.getText(), fullName);
-                hierarchy.addType(fullName);
                 return fullName;
             }
         }

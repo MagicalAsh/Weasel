@@ -2,6 +2,7 @@ package us.magicalash.weasel.plugin;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -27,6 +28,8 @@ public class PackageHierarchy {
      */
     private boolean isType;
 
+    private List<Consumer<String>> listeners;
+
     /**
      * The name of this vertex. Only null for the root, all others must be nonnull and nonempty..
      */
@@ -36,6 +39,7 @@ public class PackageHierarchy {
         this.hierarchyMap = new ConcurrentHashMap<>();
         this.isType = false;
         this.parent = null;
+        this.listeners = Collections.synchronizedList(new ArrayList<>());
     }
 
     private PackageHierarchy(boolean isType, PackageHierarchy parent, String name) {
@@ -66,6 +70,10 @@ public class PackageHierarchy {
 
             hierarchy = hierarchy.hierarchyMap.get(packageName[i]);
         }
+
+        for (Consumer<String> listener : this.listeners) {
+            listener.accept(name);
+        }
     }
 
     /**
@@ -79,6 +87,16 @@ public class PackageHierarchy {
         return hierarchy != null && hierarchy.isType;
     }
 
+    /**
+     * Checks to see if this package hierarchy contains a package with the given qualified name.
+     * @param name the qualified name to check for
+     * @return     true if contained, false otherwise.
+     */
+    public boolean containsPackage(String name) {
+        PackageHierarchy hierarchy = traverseTo(name);
+
+        return hierarchy != null && !hierarchy.isType;
+    }
     /**
      * Gets a list of the names of immediate children of the given qualified name.
      * @param name the qualified name the get children of
@@ -222,5 +240,9 @@ public class PackageHierarchy {
         }
 
         return out.toString();
+    }
+
+    public void addTypeAddListener(Consumer<String> onTypeAdd) {
+        this.listeners.add(onTypeAdd);
     }
 }

@@ -1,4 +1,4 @@
-package us.magicalash.weasel.plugin.docparser;
+package us.magicalash.weasel.plugin.docparser.visitor;
 
 import lombok.Getter;
 import us.magicalash.weasel.plugin.docparser.representation.JavaDocumentation;

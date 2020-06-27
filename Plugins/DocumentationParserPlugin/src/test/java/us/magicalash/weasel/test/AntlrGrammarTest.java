@@ -29,6 +29,15 @@ public class AntlrGrammarTest {
     public void setup() {
         this.pl = new DocumentationParserPlugin();
         PackageHierarchy hierarchy = new PackageHierarchy();
+
+        hierarchy.addType("String");
+        hierarchy.addType("java/lang/Override");
+        hierarchy.addType("Fart");
+        hierarchy.addType("foo/Foo");
+        hierarchy.addType("foo/Bar");
+        hierarchy.addType("foo/Bar2");
+        hierarchy.addType("baz/Bar");
+
         Properties properties = new Properties();
         properties.put("hierarchy(parsed_java):name", hierarchy);
 
@@ -156,14 +165,14 @@ public class AntlrGrammarTest {
         assertEquals(1, method.getParameters().size());
 
         parameter = method.getParameters().get(0);
-        assertEquals("Bar2", parameter.getType());
+        assertEquals("foo/Bar2", parameter.getType());
         assertEquals("g", parameter.getName());
 
         // check the foo field
         assertEquals(1, classType.getFields().size());
         JavaVariable field = classType.getFields().get(0);
         assertEquals("foo", field.getName());
-        assertEquals("Foo", field.getType());
+        assertEquals("foo/Foo", field.getType());
         assertModifiers(field.getModifiers(), "private");
         assertAnnotations(field.getAnnotations(), "lombok/Setter", "lombok/Getter");
     }
@@ -260,7 +269,7 @@ public class AntlrGrammarTest {
         assertEquals("void", method.getReturnType());
         assertEquals("bar", method.getName());
         assertEquals(0, method.getParameters().size());
-        assertAnnotations(method.getAnnotations(), "Override");
+        assertAnnotations(method.getAnnotations(), "java/lang/Override");
         assertModifiers(method.getModifiers(), "public");
 
         method = annotation.getMethods().get(2);
@@ -278,7 +287,7 @@ public class AntlrGrammarTest {
         assertTrue(codeUnits.get(0).getParsedObject() instanceof JavaType);
 
         JavaType type = (JavaType) codeUnits.get(0).getParsedObject();
-        assertEquals(1, type.getMethods().size());
+        assertEquals(2, type.getMethods().size());
 
         type = (JavaType) codeUnits.get(1).getParsedObject();
         assertEquals(1, type.getMethods().size());
@@ -341,6 +350,12 @@ public class AntlrGrammarTest {
         obj.add("file_contents", array);
 
         List<ParsedCodeUnit> result = pl.index(obj);
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            // no
+        }
 
         System.out.println(gson.toJson(result));
 

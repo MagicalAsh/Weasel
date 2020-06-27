@@ -1,6 +1,6 @@
 package test;
 
-import foo.Bar;
+import foo.*;
 import lombok.Getter;
 import lombok.Setter;
 
