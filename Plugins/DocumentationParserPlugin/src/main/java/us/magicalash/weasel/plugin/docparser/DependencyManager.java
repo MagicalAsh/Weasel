@@ -84,9 +84,15 @@ public class DependencyManager implements Runnable {
                     for (String prefix : dependency.getValidPackages()) {
                         String fqn = prefix + '/' + dependency.getName();
 
+                        List<CodeUnit> dependenciesForFqn = this.dependencyRequirements.get(fqn);
                         // because we explicitly removed the actual type, we shouldn't get
                         // a concurrent modification exception.
-                        this.dependencyRequirements.getOrDefault(fqn, Collections.emptyList()).remove(unit);
+                        if (dependenciesForFqn != null) {
+                            dependenciesForFqn.remove(unit);
+                            if (dependenciesForFqn.size() == 0) {
+                                this.dependencyRequirements.remove(fqn);
+                            }
+                        }
                     }
                 }
 

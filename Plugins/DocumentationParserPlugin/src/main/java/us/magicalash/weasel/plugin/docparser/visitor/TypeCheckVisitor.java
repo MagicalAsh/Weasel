@@ -72,7 +72,6 @@ public class TypeCheckVisitor extends JavaDocumentationParserBaseVisitor<List<Un
     @Override
     public List<UnresolvedDependency> visitTypeParameters(TypeParametersContext ctx) {
         // type parameters are used when defining a generic, not when using one.
-
         List<String> generics = new ArrayList<>();
         for (TypeParameterContext context : ctx.typeParameter()) {
             this.typeHelper.addImport(context.IDENTIFIER().getText());
@@ -92,10 +91,8 @@ public class TypeCheckVisitor extends JavaDocumentationParserBaseVisitor<List<Un
             // if this is true, we've discovered an unresolved type.
             UnresolvedDependency dependency = new UnresolvedDependency();
             String name = typeHelper.getTypeNameWithoutResolving(ctx);
+            name = name.replace("[]", "");
             dependency.setName(name);
-            if (name == null || name.equals("")) {
-                System.out.println("a");
-            }
             dependency.setValidPackages(typeHelper.getStarImports());
             this.unresolvedDependencies.add(dependency);
         }
