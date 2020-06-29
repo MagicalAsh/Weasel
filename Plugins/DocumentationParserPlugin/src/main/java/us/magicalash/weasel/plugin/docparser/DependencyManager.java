@@ -81,24 +81,28 @@ public class DependencyManager implements Runnable {
                 // them map. This prevents codeunits hanging around because they're technically accessible
                 // through a dependency that may never get filled, like java/lang/Foo.
                 for (UnresolvedDependency dependency : resolvedDeps) {
+                    removeFromDependencyRequirements(unit, dependency.getName());
                     for (String prefix : dependency.getValidPackages()) {
                         String fqn = prefix + '/' + dependency.getName();
-
-                        List<CodeUnit> dependenciesForFqn = this.dependencyRequirements.get(fqn);
-                        // because we explicitly removed the actual type, we shouldn't get
-                        // a concurrent modification exception.
-                        if (dependenciesForFqn != null) {
-                            dependenciesForFqn.remove(unit);
-                            if (dependenciesForFqn.size() == 0) {
-                                this.dependencyRequirements.remove(fqn);
-                            }
-                        }
+                        removeFromDependencyRequirements(unit, fqn);
                     }
                 }
 
                 if (unit.dependencies.size() == 0) {
                     executorService.submit(this.createCodeVisitorRunnable.apply(unit.obj, unit.onCompletion));
                 }
+            }
+        }
+    }
+
+    private void removeFromDependencyRequirements(CodeUnit unit, String fqn) {
+        List<CodeUnit> dependenciesForFqn = this.dependencyRequirements.get(fqn);
+        // because we explicitly removed the actual type, we shouldn't get
+        // a concurrent modification exception.
+        if (dependenciesForFqn != null) {
+            dependenciesForFqn.remove(unit);
+            if (dependenciesForFqn.size() == 0) {
+                this.dependencyRequirements.remove(fqn);
             }
         }
     }
